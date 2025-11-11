@@ -19,22 +19,29 @@ class NetworkStatsManager:ObservableObject {
     /// Status of the connection where True means connected and able to send data and False means disconnected
     @Published var netStats: NetworkStats
     
+    private var isMonitoring:Bool
+    
     init() {
         self.monitor = NWPathMonitor()
         self.queue = DispatchQueue(label: "com.quickconncheck.networkMonitor")
         self.netStats = NetworkStats.defaultOffline
+        self.isMonitoring = false
+        startMonitoring()
     }
     
     init(netStats:NetworkStats) {
         self.netStats = netStats
         self.monitor = NWPathMonitor()
         self.queue = DispatchQueue(label: "com.quickconncheck.networkMonitor")
+        self.isMonitoring = false
     }
     
     /**
      * Starts monitoring network path changes.
      */
     func startMonitoring() {
+        
+        guard !isMonitoring else { return }
         
         monitor.pathUpdateHandler = { [weak self] path in
             
@@ -46,12 +53,17 @@ class NetworkStatsManager:ObservableObject {
         
         // Start the monitor on background queue
         monitor.start(queue: queue)
+        self.isMonitoring = true
     }
     
     /**
      * Stops monitoring network path changes.
      */
     private func stopMonitoring() {
+        
+        guard self.isMonitoring else { return }
+        
+        self.isMonitoring = false
         monitor.cancel()
     }
     

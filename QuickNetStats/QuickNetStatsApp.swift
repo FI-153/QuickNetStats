@@ -27,12 +27,14 @@ struct QuickNetStatsApp: App {
             .padding()
             .frame(width: 550)
             .task {
-                netStatsManager.startMonitoring()
                 await netDetailsManager.getAddresses()
             }
 
         }, label: {
-            Label("Quick Net Stas", systemImage: "network")
+            HStack(alignment: .center) {
+                Text(netStatsManager.netStats.isConnected ? "Connected" : "Disconnected")
+                Label("Quick Net Stas", systemImage: "network")
+            }
         })
         .menuBarExtraStyle(.window)
     }
