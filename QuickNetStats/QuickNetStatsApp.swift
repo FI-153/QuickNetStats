@@ -31,10 +31,7 @@ struct QuickNetStatsApp: App {
             }
 
         }, label: {
-            Group {
-                Text(netStatsManager.netStats.isConnected ? "Connected" : "Disconnected")
-                NetworkInterfaceView(netIntervaceType: netStatsManager.netStats.interfaceType, isAvailable: netStatsManager.netStats.isConnected, linkQualityColor: .green)
-            }
+            Text(netStatsManager.netStats.summary)
         }
         )
         .menuBarExtraStyle(.window)

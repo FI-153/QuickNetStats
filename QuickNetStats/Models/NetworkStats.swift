@@ -50,6 +50,18 @@ struct NetworkStats {
         return status == .satisfied
     }
     
+    /// Summarizes the state of the connection in a sentence that can be shown to the user
+    var summary:String {
+        var quality = ""
+        if #available(macOS 26, *) {
+            if let linkQuality = linkQuality {
+                quality = linkQuality.rawValue.capitalized
+            }
+        }
+        
+        return "\(quality) Connection to \(interfaceType.rawValue.capitalized)"
+    }
+    
     // MARK: - Initializers
     
     /**
