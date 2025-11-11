@@ -13,16 +13,30 @@ struct QuickNetStatsApp: App {
     @StateObject var netStatsManager:NetworkStatsManager = NetworkStatsManager()
     @StateObject var netDetailsManager:NetworkDetailsManager = NetworkDetailsManager()
     
+    @State var isSettingViewOpened: Bool = false
+    
+    @AppStorage(UserDefaultsKeys.showSummary)
+    private var showSummary: Bool = true
+    
     var body: some Scene {
         MenuBarExtra( content: {
-            VStack(spacing: 16){
-                ContentView(
-                    netStats: netStatsManager.netStats,
-                    privateIP: netDetailsManager.privateIP,
-                    publicIP: netDetailsManager.publicIP
-                )
-                Divider()
-                footerButtonsSection
+            ZStack {
+                VStack(spacing: 16){
+                    ContentView(
+                        netStats: netStatsManager.netStats,
+                        privateIP: netDetailsManager.privateIP,
+                        publicIP: netDetailsManager.publicIP
+                    )
+                    Divider()
+                    footerButtonsSection
+                }
+                .blur(radius: isSettingViewOpened ? 3 : 0)
+                .disabled(isSettingViewOpened)
+                
+                SettingsView(isSettingViewOpened: $isSettingViewOpened)
+                    .animation(.bouncy(duration:0.4), value: isSettingViewOpened)
+                    .offset(y: isSettingViewOpened ? 0 : 500)
+
             }
             .padding()
             .frame(width: 550)
@@ -31,8 +45,12 @@ struct QuickNetStatsApp: App {
             }
 
         }, label: {
-            Text(netStatsManager.netStats.summary)
-        }
+            if showSummary {
+                Text(netStatsManager.netStats.summary)
+            } else {
+                Image(systemName: "network")
+            }
+         }
         )
         .menuBarExtraStyle(.window)
     }
@@ -55,7 +73,7 @@ struct QuickNetStatsApp: App {
             }
             
             Button {
-                
+                self.isSettingViewOpened = true
             } label: {
                 FooterButtonLabelView(labelText: "Settings", systemName: "gear")
             }
