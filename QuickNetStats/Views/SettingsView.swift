@@ -7,20 +7,12 @@
 
 import SwiftUI
 
-enum UserDefaultsKeys {
-    static let showSummary = "showSummary"
-    static let useAnimations = "useAnimations"
-}
-
 struct SettingsView: View {
     
     @StateObject var vm: SettingsViewModel
     
-    @AppStorage(UserDefaultsKeys.showSummary)
-    private var showSummary: Bool = true
+    @EnvironmentObject var settings:Settings
     
-    @AppStorage(UserDefaultsKeys.useAnimations)
-    private var useAnimations: Bool = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
     
     init(isSettingViewOpened: Binding<Bool>) {
         _vm = .init(wrappedValue: SettingsViewModel(isSettingViewOpened: isSettingViewOpened))
@@ -40,7 +32,7 @@ struct SettingsView: View {
                 
                 Spacer()
                 
-                Toggle(isOn: $showSummary) {}
+                Toggle(isOn: settings.$showSummary) {}
                     .toggleStyle(.switch)
             }
             .frame(width: 350)
@@ -51,7 +43,7 @@ struct SettingsView: View {
                 
                 Spacer()
                 
-                Toggle(isOn: $useAnimations) {}
+                Toggle(isOn: settings.$useAnimations) {}
                     .toggleStyle(.switch)
             }
             .frame(width: 350)

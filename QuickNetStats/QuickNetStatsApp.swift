@@ -15,8 +15,7 @@ struct QuickNetStatsApp: App {
     
     @State var isSettingViewOpened: Bool = false
     
-    @AppStorage(UserDefaultsKeys.showSummary)
-    private var showSummary: Bool = true
+    @StateObject var settings:Settings = Settings()
     
     var body: some Scene {
         MenuBarExtra( content: {
@@ -43,9 +42,10 @@ struct QuickNetStatsApp: App {
             .task {
                 await netDetailsManager.getAddresses()
             }
+            .environmentObject(settings)
 
         }, label: {
-            if showSummary {
+            if settings.showSummary {
                 Text(netStatsManager.netStats.summary)
             } else {
                 Image(systemName: "network")
