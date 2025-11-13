@@ -44,7 +44,7 @@ struct NetworkInterfaceView: View {
             .symbolRenderingMode(.hierarchical)
             .resizable()
             .scaledToFit()
-            .foregroundStyle(isAvailable ? .green : .gray)
+            .foregroundStyle(isAvailable ? linkQualityColor : .gray)
             .onAppear {
                 self.appear = !self.appear
             }

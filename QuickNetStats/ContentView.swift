@@ -13,6 +13,7 @@ struct ContentView: View {
     var netStats:NetworkStats
     var privateIP:String?
     var publicIP:String?
+    @EnvironmentObject var settings:Settings
     
     var linkQualityColor: Color {
         switch netStats.linkQuality {
@@ -34,14 +35,14 @@ struct ContentView: View {
                 NetworkInterfaceView(
                     netIntervaceType: netStats.interfaceType,
                     isAvailable: netStats.isConnected,
-                    linkQualityColor: linkQualityColor
+                    linkQualityColor: settings.isColorful ? linkQualityColor : .primary
                 )
                 .frame(height: 80)
                 
                 if let linkQuality = netStats.linkQuality {
                     LinkQualityView(
                         linkQuality: linkQuality,
-                        linkQualityColor: linkQualityColor
+                        linkQualityColor: settings.isColorful ? linkQualityColor : .primary
                     )
                 }
             }

@@ -14,6 +14,7 @@ class Settings:ObservableObject {
     enum UserDefaultsKeys {
         static let showSummary = "showSummary"
         static let useAnimations = "useAnimations"
+        static let isColorful = "isColorful"
     }
     
     @AppStorage(UserDefaultsKeys.showSummary)
@@ -21,5 +22,8 @@ class Settings:ObservableObject {
     
     @AppStorage(UserDefaultsKeys.useAnimations)
     var useAnimations: Bool = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+    
+    @AppStorage(UserDefaultsKeys.isColorful)
+    var isColorful: Bool = true
 
 }

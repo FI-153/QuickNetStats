@@ -17,7 +17,7 @@ struct SettingsView: View {
     init(isSettingViewOpened: Binding<Bool>) {
         _vm = .init(wrappedValue: SettingsViewModel(isSettingViewOpened: isSettingViewOpened))
     }
-    
+        
     var body: some View {
 
         VStack(spacing: 20)
@@ -25,28 +25,10 @@ struct SettingsView: View {
             headerSection
             
             Divider()
-            
-            HStack{
-                Text("Show Network Summary in the Menu Bar")
-                    .fontWeight(.semibold)
-                
-                Spacer()
-                
-                Toggle(isOn: settings.$showSummary) {}
-                    .toggleStyle(.switch)
-            }
-            .frame(width: 350)
-            
-            HStack{
-                Text("Display Animations")
-                    .fontWeight(.semibold)
-                
-                Spacer()
-                
-                Toggle(isOn: settings.$useAnimations) {}
-                    .toggleStyle(.switch)
-            }
-            .frame(width: 350)
+                        
+            toggleSection("Show Network Summary in the Menu Bar", settings.$showSummary)
+            toggleSection("Display Animations", settings.$useAnimations)
+            toggleSection("Use Colors", settings.$isColorful)
             
             Divider()
         }
@@ -58,6 +40,19 @@ struct SettingsView: View {
             xCrossButton
         }
         
+    }
+    
+    fileprivate func toggleSection(_ title:String, _ variable: Binding<Bool>) -> some View {
+        return HStack{
+            Text(title)
+                .fontWeight(.semibold)
+            
+            Spacer()
+            
+            Toggle(isOn: variable) {}
+                .toggleStyle(.switch)
+        }
+        .frame(width: 350)
     }
     
     private let headerSection: HStack<TupleView<(Text, Spacer)>> = HStack {

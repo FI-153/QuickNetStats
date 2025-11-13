@@ -68,6 +68,8 @@ struct LinkQualityView: View {
         LinkQualityView(linkQuality: .moderate, linkQualityColor: .orange)
         LinkQualityView(linkQuality: .minimal, linkQualityColor: .red)
         LinkQualityView(linkQuality: .unknown, linkQualityColor: .secondary)
+        
+        LinkQualityView(linkQuality: .moderate, linkQualityColor: .primary)
 
     }
     .padding()
