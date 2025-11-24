@@ -40,14 +40,25 @@ struct NetworkInterfaceView: View {
     }
     
     var imageSection:some View {
-        Image(systemName: symbolName)
-            .symbolRenderingMode(.hierarchical)
-            .resizable()
-            .scaledToFit()
-            .foregroundStyle(isAvailable ? linkQualityColor : .gray)
-            .onAppear {
-                self.appear = !self.appear
+        
+        Group {
+            if isAvailable {
+                Image(systemName: symbolName)
+                    .resizable()
+                    .foregroundStyle(linkQualityColor)
+            } else {
+                Image(systemName: symbolName)
+                    .resizable()
+                    .foregroundStyle(.gray)
+                    .modifier(VerticalShimmerEffect())
             }
+        }
+        .symbolRenderingMode(.hierarchical)
+        .scaledToFit()
+        .onAppear {
+            self.appear.toggle()
+        }
+        
     }
 }
 
@@ -86,5 +97,6 @@ struct NetworkInterfaceView: View {
         }
 
     }
+    .environmentObject(Settings())
     .padding()
 }

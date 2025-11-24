@@ -53,8 +53,16 @@ struct LinkQualityView: View {
                 .fontWeight(.semibold)
                 .foregroundColor(.secondary)
             
-            Text(linkQuality.rawValue.capitalized)
-                .foregroundStyle(linkQualityColor)
+            Group {
+                if linkQuality != .unknown {
+                    Text(linkQuality.rawValue.capitalized)
+                } else {
+                    Text("Computing...")
+                        .foregroundStyle(linkQualityColor)
+                        .modifier(HorizontalShimmerEffect())
+                }
+            }
+            .foregroundStyle(linkQualityColor)
             
         }
         .frame(width: 80, height: 80)
