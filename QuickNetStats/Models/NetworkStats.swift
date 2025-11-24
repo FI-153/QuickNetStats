@@ -52,14 +52,21 @@ struct NetworkStats {
     
     /// Summarizes the state of the connection in a sentence that can be shown to the user
     var summary:String {
+        
+        if interfaceType == .none {
+            return "No Connection"
+        }
+        
         var quality = ""
         if #available(macOS 26, *) {
             if let linkQuality = linkQuality {
-                quality = linkQuality.rawValue.capitalized
+                if linkQuality != .unknown {
+                    quality = "\(linkQuality.rawValue.capitalized) "
+                }
             }
         }
         
-        return "\(quality) Connection to \(interfaceType.rawValue.capitalized)"
+        return "\(quality)Connection to \(interfaceType.rawValue.capitalized)"
     }
     
     // MARK: - Initializers
