@@ -31,17 +31,17 @@ struct AddressView: View {
     }
 }
 
-#Preview {
-    VStack(spacing: 100) {
+#Preview("Addresses") {
+    VStack(spacing: 30) {
         HStack {
             AddressView(title: "Private IP", value: "10.0.0.32")
             AddressView(title: "Public IP", value: "100.34.21.56")
         }
         
-        HStack {
-            AddressView(title: "Private IP", value: "999.999.999.999")
-            AddressView(title: "Public IP", value: "999.999.999.999")
-        }
+//        HStack {
+//            AddressView(title: "Private IP", value: "999.999.999.999")
+//            AddressView(title: "Public IP", value: "999.999.999.999")
+//        }
         
         HStack {
             AddressView(title: "Private IP", value: "Unavailbable")

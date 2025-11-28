@@ -79,6 +79,7 @@ struct SettingsView: View {
     
 }
 
-#Preview {
+#Preview("Settings") {
     SettingsView(isSettingViewOpened: .constant(false))
+        .environmentObject(Settings())
 }

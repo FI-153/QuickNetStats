@@ -69,7 +69,7 @@ struct LinkQualityView: View {
     }
 }
 
-#Preview {
+#Preview("Link Quality") {
     
     HStack(spacing: 40) {
         LinkQualityView(linkQuality: .good, linkQualityColor: .green)

@@ -62,40 +62,43 @@ struct NetworkInterfaceView: View {
     }
 }
 
-#Preview {
+#Preview("Network Interface") {
     VStack (spacing: 100){
-        HStack(spacing: 100) {
-            NetworkInterfaceView(netIntervaceType: .wifi, isAvailable: true, linkQualityColor: .green)
-                .frame(height: 80)
-
-            NetworkInterfaceView(netIntervaceType: .wifi, isAvailable: false, linkQualityColor: .secondary)
-                .frame(height: 80)
-
+        HStack (spacing: 100){
+            HStack(spacing: 30) {
+                NetworkInterfaceView(netIntervaceType: .wifi, isAvailable: true, linkQualityColor: .green)
+                    .frame(height: 80)
+                
+                NetworkInterfaceView(netIntervaceType: .wifi, isAvailable: false, linkQualityColor: .secondary)
+                    .frame(height: 80)
+                
+            }
+            HStack(spacing: 30) {
+                NetworkInterfaceView(netIntervaceType: .ethernet, isAvailable: true, linkQualityColor: .green)
+                    .frame(height: 80)
+                
+                NetworkInterfaceView(netIntervaceType: .ethernet, isAvailable: false, linkQualityColor: .secondary)
+                    .frame(height: 80)
+                
+            }
         }
-        HStack(spacing: 100) {
-            NetworkInterfaceView(netIntervaceType: .ethernet, isAvailable: true, linkQualityColor: .green)
-                .frame(height: 80)
-
-            NetworkInterfaceView(netIntervaceType: .ethernet, isAvailable: false, linkQualityColor: .secondary)
-                .frame(height: 80)
-
+        HStack (spacing: 100){
+            HStack(spacing: 30) {
+                NetworkInterfaceView(netIntervaceType: .cellular, isAvailable: true, linkQualityColor: .green)
+                    .frame(height: 80)
+                
+                NetworkInterfaceView(netIntervaceType: .cellular, isAvailable: false, linkQualityColor: .secondary)
+                    .frame(height: 80)
+                
+            }
+            HStack(spacing: 30) {
+                NetworkInterfaceView(netIntervaceType: .other, isAvailable: true, linkQualityColor: .green)
+                    .frame(height: 80)
+                
+                NetworkInterfaceView(netIntervaceType: .other, isAvailable: false, linkQualityColor: .secondary)
+                    .frame(height: 80)
+            }
         }
-        HStack(spacing: 100) {
-            NetworkInterfaceView(netIntervaceType: .cellular, isAvailable: true, linkQualityColor: .green)
-                .frame(height: 80)
-
-            NetworkInterfaceView(netIntervaceType: .cellular, isAvailable: false, linkQualityColor: .secondary)
-                .frame(height: 80)
-
-        }
-        HStack(spacing: 100) {
-            NetworkInterfaceView(netIntervaceType: .other, isAvailable: true, linkQualityColor: .green)
-                .frame(height: 80)
-
-            NetworkInterfaceView(netIntervaceType: .other, isAvailable: false, linkQualityColor: .secondary)
-                .frame(height: 80)
-        }
-
     }
     .environmentObject(Settings())
     .padding()

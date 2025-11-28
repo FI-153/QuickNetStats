@@ -206,12 +206,23 @@ struct NetworkStats {
         )
     }
     
-    static var mockConstrainedAndExpansiveWifiCoonection: NetworkStats {
+    static var mockConstrainedAndExpansiveCellCoonection: NetworkStats {
         return NetworkStats(
             status: .satisfied,
-            interfaceType: .wifi,
+            interfaceType: .cellular,
             isExpensive: true,
             isConstrained: true,
+            reason: .none,
+            linkQuality: .good
+        )
+    }
+    
+    static var mockExpansiveCellCoonection: NetworkStats {
+        return NetworkStats(
+            status: .satisfied,
+            interfaceType: .cellular,
+            isExpensive: true,
+            isConstrained: false,
             reason: .none,
             linkQuality: .good
         )

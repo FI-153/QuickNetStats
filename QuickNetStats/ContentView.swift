@@ -61,12 +61,12 @@ struct ContentView: View {
                 Divider()
                 
                 if netStats.isExpensive {
-                    Text("You are connected to a cellular connection which may have a network cap")
+                    Text("You are connected to a cellular connection which may have a network cap.")
                         .foregroundStyle(.secondary)
                 }
                 
                 if netStats.isConstrained {
-                    Text("Low Data Mode is anabled for this network")
+                    Text("Low Data Mode is anabled for this network.")
                         .foregroundStyle(.secondary)
                 }
             }
@@ -112,6 +112,7 @@ func copyToClipboard(_ str :String) {
     )
         .padding()
         .frame(width: 550)
+        .environmentObject(Settings())
 }
 
 #Preview("Moderate Connection") {
@@ -122,6 +123,7 @@ func copyToClipboard(_ str :String) {
     )
     .padding()
     .frame(width: 550)
+    .environmentObject(Settings())
 }
 
 #Preview("Bad Connection") {
@@ -132,6 +134,7 @@ func copyToClipboard(_ str :String) {
     )
     .padding()
     .frame(width: 550)
+    .environmentObject(Settings())
 }
 
 #Preview("Good Eth Connection") {
@@ -142,6 +145,7 @@ func copyToClipboard(_ str :String) {
     )
     .padding()
     .frame(width: 550)
+    .environmentObject(Settings())
 }
 
 #Preview("Constrained") {
@@ -152,16 +156,18 @@ func copyToClipboard(_ str :String) {
     )
     .padding()
     .frame(width: 550)
+    .environmentObject(Settings())
 }
 
 #Preview("Constriied + Expansive") {
     ContentView(
-        netStats: NetworkStats.mockConstrainedAndExpansiveWifiCoonection,
+        netStats: NetworkStats.mockConstrainedAndExpansiveCellCoonection,
         privateIP: "10.0.0.32",
         publicIP: "100.10.30.2"
     )
     .padding()
     .frame(width: 550)
+    .environmentObject(Settings())
 }
 
 
@@ -173,4 +179,61 @@ func copyToClipboard(_ str :String) {
     )
     .padding()
     .frame(width: 550)
+    .environmentObject(Settings())
+}
+
+#Preview("QuickNetStats") {
+    VStack {
+        ContentView(
+            netStats: NetworkStats.mockGoodWifiCoonection,
+            privateIP: "10.0.0.32",
+            publicIP: "100.10.30.2"
+        )
+        .padding()
+        .frame(width: 550)
+        .environmentObject(Settings())
+        
+        ContentView(
+            netStats: NetworkStats.mockModerateWifiCoonection,
+            privateIP: "10.0.0.32",
+            publicIP: "100.10.30.2"
+        )
+        .padding()
+        .frame(width: 550)
+        .environmentObject(Settings())
+        
+        ContentView(
+            netStats: NetworkStats.mockBadWifiCoonection,
+            privateIP: "10.0.0.32",
+            publicIP: "100.10.30.2"
+        )
+        .padding()
+        .frame(width: 550)
+        .environmentObject(Settings())
+        
+    }
+}
+
+#Preview("Constrained or Expansive Connections") {
+    HStack(spacing: 100) {
+        ContentView(
+            netStats: NetworkStats.mockConstrainedWifiCoonection,
+            privateIP: "10.0.0.32",
+            publicIP: "100.10.30.2"
+        )
+        .padding()
+        .frame(width: 550)
+        .environmentObject(Settings())
+        
+        ContentView(
+            netStats: NetworkStats.mockExpansiveCellCoonection,
+            privateIP: "10.0.0.32",
+            publicIP: "100.10.30.2"
+        )
+        .padding()
+        .frame(width: 550)
+        .environmentObject(Settings())
+        
+        
+    }
 }
