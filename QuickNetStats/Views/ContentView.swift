@@ -33,7 +33,7 @@ struct ContentView: View {
             .disabled(isSettingViewOpened)
             
             SettingsView(isSettingViewOpened: $isSettingViewOpened)
-                .animation(.bouncy(duration:0.4), value: isSettingViewOpened)
+                .animation(settings.useAnimations ? .bouncy(duration:0.4) : .none, value: isSettingViewOpened)
                 .offset(y: isSettingViewOpened ? 0 : 500)
                 .environmentObject(settings)
         }
