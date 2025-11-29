@@ -11,23 +11,16 @@ import SystemConfiguration
 
 class NetworkDetailsManager: ObservableObject {
     
-    /// The private IP of the machine
+    /// The private IP of the machine.
     @Published var privateIP: String?
     
-    /// The public IP of this machine
+    /// The public IP of this machine.
     @Published var publicIP:String?
-    
-    init(){}
-    
-    init(privateIP: String?, publicIP: String?) {
-        self.privateIP = privateIP
-        self.publicIP = publicIP
-    }
-    
-    /// Populates the published attrivbutes for public and private IP
+        
+    /// Populate the published attributes for public and private IP.
     func getAddresses() async {
         
-        //Delete the old values so the UI shows "computing"
+        //Delete the old values
         self.publicIP = nil
         self.privateIP = nil
         
@@ -37,7 +30,7 @@ class NetworkDetailsManager: ObservableObject {
     }
     
     /**
-     * Fetches the device's public (external) IP address from an online service.
+     * Fetch the device's public IPV4 address.
      * This function makes an asynchronous network call to `https.api.ipify.org`.
      */
     private func fetchPublicIpAddress() async -> String? {
@@ -60,7 +53,7 @@ class NetworkDetailsManager: ObservableObject {
     }
     
     /**
-     * Fetches the device's private IP address for a specific interface.
+     * Fetch the device's private IP address for a specific interface.
      * This function iterates through the device's network interfaces (like Wi-Fi or Cellular)
      * and returns the first valid IPv4 address found.
      *

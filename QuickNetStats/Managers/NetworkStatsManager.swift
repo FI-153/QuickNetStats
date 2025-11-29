@@ -11,15 +11,15 @@ import Combine
 
 class NetworkStatsManager:ObservableObject {
     
-    private let monitor: NWPathMonitor
+    private var monitor: NWPathMonitor
     
-    // A dedicated queue for the monitor to run on to avoid blocking the main thread
+    /// A dedicated queue for the monitor to run on to avoid blocking the main thread.
     private let queue: DispatchQueue
     
-    /// Status of the connection where True means connected and able to send data and False means disconnected
+    /// Status of the connection where True means connected and able to send data and False means disconnected.
     @Published var netStats: NetworkStats
     
-    /// Tracks if the monitor is monitoring to avoid multiple monitoring sessions
+    /// Track if the monitor is monitoring to avoid multiple monitoring sessions.
     private var isMonitoring:Bool
     
     init() {
@@ -29,24 +29,16 @@ class NetworkStatsManager:ObservableObject {
         self.isMonitoring = false
         startMonitoring()
     }
-    
-    init(netStats:NetworkStats) {
-        self.netStats = netStats
-        self.monitor = NWPathMonitor()
-        self.queue = DispatchQueue(label: "com.quickconncheck.networkMonitor")
-        self.isMonitoring = false
-    }
-    
-    /**
-     * Starts monitoring network path changes.
-     */
+        
+    /// Start monitoring network path changes.
     func startMonitoring() {
         
+        // Prevent starting a monitor when it has already started
         guard !isMonitoring else { return }
         
         monitor.pathUpdateHandler = { [weak self] path in
             
-            // Update the @Published property on the main thread
+            // Update the published netStats property on the main thread
             DispatchQueue.main.async {
                 self?.netStats = NetworkStats(path: path)
             }
@@ -54,20 +46,28 @@ class NetworkStatsManager:ObservableObject {
         
         // Start the monitor on background queue
         monitor.start(queue: queue)
+        
         self.isMonitoring = true
     }
     
-    /**
-     * Stops monitoring network path changes.
-     */
+    /// Stop monitoring network path changes
     private func stopMonitoring() {
         
+        // Prevent stopping a monitor that has not started
         guard self.isMonitoring else { return }
         
         self.isMonitoring = false
+        self.netStats = NetworkStats.defaultOffline
+        
+        // Cancel the monitor
         monitor.cancel()
+        
+        // Initialize a new monitor since every monitor can only be started once
+        // and further start instructions are ignored
+        monitor = NWPathMonitor()
     }
     
+    /// Refresh the monitor by stopping the current one and starting a new monitor.
     func refresh() {
         stopMonitoring()
         startMonitoring()
