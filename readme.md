@@ -78,3 +78,4 @@ Contributions are welcome! To contribute:
 
 ## Notes
 - The link quality is simply an rough estimate. A propper speedtest (e.g. `speedtest-cli`) will always be more accurate but it will take some time. This implementation wins on speed rather than accuracy.
+- I developed it using dark mode because i think it looks best, but light mode is fully supported as well
