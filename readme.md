@@ -1,7 +1,8 @@
-# QuickNetStats
+# <img src='Assets/icon.png' width='65' align='center' alt='icon'> QuickNetStats
+
 Essential network statistics directly in the Menu Bar
 
-![153](https://github.com/FI-153/QuickNetStats/blob/d02c41969868b0fdc06dc63916e5cbc0f0d13c8f/Assets/main.png)
+![153](https://github.com/FI-153/QuickNetStats/blob/9f0b05fc50059832c9081d3e714266acff3bf726/Assets/main.png)
 
 > [!IMPORTANT]
 > The app is compatible down to macOS 13 (Ventura) but the network quality information uses an API available from macOS 26 (Tahoe) onwards.
