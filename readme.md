@@ -32,7 +32,7 @@ brew update && brew upgrade quicknetstats
 ```
 
 ## 🛠️ Build from Source
-Can clone this repo, open the project in Xcode and build the app from scratch. If you considered this route you probably don't need more instruction!
+You can also clone this repo, open the project in Xcode and build the app from scratch. If you considered this route you probably don't need any more instruction!
 
 ## 💡 Features & Usage
 Opening the app displays the status of the current connection in the menu bar. By holding `cmd` you can use the mouse to drag the app to your preferred position in the menu bar. 
