@@ -39,7 +39,7 @@ struct QuickNetStatsApp: App {
         
         // Scene 2: The Settings Window
         WindowGroup(id: "settings-window") {
-            SettingsView(isSettingViewOpened: .constant(true)) // Replace with your actual Settings View
+            SettingsView() // Replace with your actual Settings View
                 .environmentObject(settings)
                 .frame(minWidth: 300, minHeight: 400) // Set reasonable defaults
         }

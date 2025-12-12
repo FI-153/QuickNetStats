@@ -12,33 +12,52 @@ struct SettingsView: View {
     @StateObject var vm: SettingsViewModel
     @EnvironmentObject var settings:Settings
     
+    @State private var selectedPage:SettingsViewModel.SettingsPage = .menubar
     
-    init(isSettingViewOpened: Binding<Bool>) {
-        _vm = .init(wrappedValue: SettingsViewModel(isSettingViewOpened: isSettingViewOpened))
+    init() {
+        _vm = .init(wrappedValue: SettingsViewModel())
     }
         
     var body: some View {
-
-        VStack(spacing: 20)
-        {
-            headerSection
-            
-            Divider()
-                        
-            toggleSection("Show Network Summary in the Menu Bar", settings.$showSummary)
-            toggleSection("Display Animations", settings.$useAnimations)
-            toggleSection("Use Colors", settings.$isColorful)
-            
-            Divider()
-        }
-        .padding()
-        .frame(width: 450)
-        .background(Material.ultraThin)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .overlay(alignment: .topTrailing) {
-            xCrossButton
-        }
         
+        VStack {
+            NavigationSplitView {
+                List(SettingsViewModel.SettingsPage.allCases, selection: $selectedPage) { page in
+                    NavigationLink(value: page) {
+                        settingsListItem(page)
+                    }
+                }
+                .navigationSplitViewColumnWidth(min: 150, ideal: 200)
+                
+            } detail: {
+                switch selectedPage {
+                case .menubar:
+                    MenuBarView(settings: settings)
+                case .visuals:
+                    VisualsView(settings: settings)
+                case .about:
+                    AboutView(settings: settings)
+                }
+            }
+            .frame(minWidth: 600, minHeight: 400)
+            .navigationTitle(selectedPage.title)
+        }
+    }
+    
+    fileprivate func settingsListItem(_ page:SettingsViewModel.SettingsPage) -> some View {
+        HStack (alignment: .center) {
+            Image(systemName: page.icon)
+                .font(.title2)
+                .fontWeight(.bold)
+                .frame(width: 40, height: 40)
+                .background(
+                    page.color
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            
+            Text(page.title)
+                .font(.title3)
+        }
     }
     
     fileprivate func toggleSection(_ title:String, _ variable: Binding<Bool>) -> some View {
@@ -53,32 +72,10 @@ struct SettingsView: View {
         }
         .frame(width: 350)
     }
-    
-    private let headerSection: HStack<TupleView<(Text, Spacer)>> = HStack {
-        Text("Settings")
-            .font(.largeTitle)
-        
-        Spacer()
-    }
-    
-    private var xCrossButton: some View {
-        Button {
-            vm.isSettingViewOpened = false
-        } label: {
-            Image(systemName: "xmark.circle.fill")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 25, height: 25)
-                .opacity(0.6)
-                .padding()
-        }
-        .buttonStyle(.plain)
-        .focusable(false)
-    }
-    
+            
 }
 
 #Preview("Settings") {
-    SettingsView(isSettingViewOpened: .constant(false))
+    SettingsView()
         .environmentObject(Settings())
 }
