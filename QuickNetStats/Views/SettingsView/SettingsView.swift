@@ -17,31 +17,41 @@ struct SettingsView: View {
     init() {
         _vm = .init(wrappedValue: SettingsViewModel())
     }
-        
+    
     var body: some View {
         
-        VStack {
-            NavigationSplitView {
-                List(SettingsViewModel.SettingsPage.allCases, selection: $selectedPage) { page in
-                    NavigationLink(value: page) {
-                        settingsListItem(page)
-                    }
-                }
-                .navigationSplitViewColumnWidth(min: 150, ideal: 200)
-                
-            } detail: {
-                switch selectedPage {
-                case .menubar:
-                    MenuBarView(settings: settings)
-                case .visuals:
-                    VisualsView(settings: settings)
-                case .about:
-                    AboutView(settings: settings)
+        NavigationSplitView {
+            List(SettingsViewModel.SettingsPage.allCases, selection: $selectedPage) { page in
+                NavigationLink(value: page) {
+                    settingsListItem(page)
                 }
             }
-            .frame(minWidth: 600, minHeight: 400)
-            .navigationTitle(selectedPage.title)
+            .navigationSplitViewColumnWidth(min: 180, ideal: 180)
+        } detail: {
+            switch selectedPage {
+            case .menubar:
+                MenuBarView(settings: settings)
+            case .visuals:
+                VisualsView(settings: settings)
+            case .about:
+                AboutView(settings: settings)
+            }
         }
+        .frame(minWidth: 600, minHeight: 400)
+        .navigationTitle(selectedPage.title)
+        .toolbar {
+            Button {
+                exit(0)
+            } label: {
+                HStack {
+                    Image(systemName: "power")
+                        .fontWeight(.bold)
+                    Text("Quit App")
+                }
+                .padding(8)
+            }
+        }
+        
     }
     
     fileprivate func settingsListItem(_ page:SettingsViewModel.SettingsPage) -> some View {
@@ -59,20 +69,6 @@ struct SettingsView: View {
                 .font(.title3)
         }
     }
-    
-    fileprivate func toggleSection(_ title:String, _ variable: Binding<Bool>) -> some View {
-        return HStack{
-            Text(title)
-                .fontWeight(.semibold)
-            
-            Spacer()
-            
-            Toggle(isOn: variable) {}
-                .toggleStyle(.switch)
-        }
-        .frame(width: 350)
-    }
-            
 }
 
 #Preview("Settings") {

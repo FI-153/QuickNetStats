@@ -12,7 +12,22 @@ struct MenuBarView: View {
     @ObservedObject var settings:Settings
     
     var body: some View {
-        Text("Menu Bar")
+        Form {
+            Section {
+                ToggleView(title: "Show Summary", variable: settings.$showSummary, description: "Display a summary of the connection or just an icon")
+            } header: {
+                Text("Menu Bar Style")
+            }
+            
+            Section {
+                ToggleView(title: "Launch at Login", variable: .constant(false))
+                
+            } header: {
+                Text("System Features")
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
     }
 }
 
