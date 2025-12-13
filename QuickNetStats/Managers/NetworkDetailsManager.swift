@@ -19,6 +19,13 @@ class NetworkDetailsManager: ObservableObject {
         
     /// Populate the published attributes for public and private IP.
     func getAddresses() async {
+        self.publicIP = await fetchPublicIpAddress()
+        self.privateIP = getPrivateIPAddress()
+    }
+    
+    /// Delete the old IPs then populate the published attributes for public and private IP.
+    /// Use this to trigger UI updates every time the method is called
+    func deleteAndGetAddresses() async {
         
         //Delete the old values
         self.publicIP = nil
