@@ -17,7 +17,7 @@ struct ContentView: View {
     @Environment(\.openWindow) var openWindow
     
     var body: some View {
-        VStack(spacing: 16){
+        VStack(spacing: 0){
             NetStatsView(
                 netStats: netStatsManager.netStats,
                 privateIP: netDetailsManager.privateIP,
