@@ -44,8 +44,8 @@ struct AddressView: View {
 //        }
         
         HStack {
-            AddressView(title: "Private IP", value: "Unavailbable")
-            AddressView(title: "Public IP", value: "Unavailbable")
+            AddressView(title: "Private IP", value: "Unavailable")
+            AddressView(title: "Public IP", value: "Unavailable")
         }
 
     }

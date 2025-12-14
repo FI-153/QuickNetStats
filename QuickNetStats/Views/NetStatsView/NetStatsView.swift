@@ -55,7 +55,7 @@ struct NetStatsView: View {
                 }
                 
                 if vm.netStats.isConstrained {
-                    Text("Low Data Mode is anabled for this network.")
+                    Text("Low Data Mode is enabled for this network.")
                         .foregroundStyle(.secondary)
                 }
             }
@@ -69,7 +69,7 @@ struct NetStatsView: View {
                     vm.copyToClipboard(publicIP)
                 }
             } label: {
-                AddressView(title: "Public IP", value: vm.publicIP ?? "Unavailbable")
+                AddressView(title: "Public IP", value: vm.publicIP ?? "Unavailable")
             }
             .help("Click to copy to Clipboard")
             
@@ -78,7 +78,7 @@ struct NetStatsView: View {
                     vm.copyToClipboard(privateIP)
                 }
             } label: {
-                AddressView(title: "Private IP", value: vm.privateIP ?? "Unavailbable")
+                AddressView(title: "Private IP", value: vm.privateIP ?? "Unavailable")
             }
             .help("Click to copy to Clipboard")
         }
