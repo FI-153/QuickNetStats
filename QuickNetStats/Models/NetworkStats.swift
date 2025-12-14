@@ -57,6 +57,7 @@ struct NetworkStats {
             return "No Connection"
         }
         
+        // Only show the quality for macOS 26+
         var quality = ""
         if #available(macOS 26, *) {
             if let linkQuality = linkQuality {
@@ -66,7 +67,7 @@ struct NetworkStats {
             }
         }
         
-        return "\(quality)Connection to \(interfaceType.rawValue.capitalized)"
+        return "\(quality) \(interfaceType.rawValue.capitalized) Connection"
     }
     
     // MARK: - Initializers
@@ -80,26 +81,31 @@ struct NetworkStats {
         self.isConstrained = path.isConstrained
         
         if path.status == .unsatisfied {
-            
-            if #available(iOS 14.2, *) {
-                self.unsatisfiedReason = path.unsatisfiedReason
-            } else {
-                self.unsatisfiedReason = .notAvailable // Best guess for older OS
-            }
+            self.unsatisfiedReason = path.unsatisfiedReason
         } else {
             self.unsatisfiedReason = nil
         }
         
         if path.usesInterfaceType(.wifi) {
-            self.interfaceType = .wifi
+            // A wireless connection to an hotspot still registers as WiFi
+            // Set it to cellular for greater clarity
+            self.interfaceType = path.isExpensive ? .cellular : .wifi
+            
         } else if path.usesInterfaceType(.cellular) {
             self.interfaceType = .cellular
+            
         } else if path.usesInterfaceType(.wiredEthernet) {
-            self.interfaceType = .ethernet
+            // A wired connection to an hotspot still registers as Ethernet
+            // Set it to cellular for greater clarity
+            self.interfaceType = path.isExpensive ? .cellular : .ethernet
+            
         } else if path.status == .satisfied {
-            self.interfaceType = .other // Connected, but not a known type
+            // Connected, but not a known type
+            self.interfaceType = .other
+            
         } else {
-            self.interfaceType = .none // Not connected
+            // Not connected
+            self.interfaceType = .none
         }
         
         
@@ -118,6 +124,7 @@ struct NetworkStats {
         
     }
     
+    // Use this for mockups and static defaults
     private init(status: NWPath.Status,
                  interfaceType: NetworkInterfaceType,
                  isExpensive: Bool,
