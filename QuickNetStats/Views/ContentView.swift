@@ -18,7 +18,7 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            VStack(spacing: 16){
+            VStack(spacing: 0){
                 NetStatsView(
                     netStats: netStatsManager.netStats,
                     privateIP: netDetailsManager.privateIP,
@@ -65,6 +65,7 @@ struct ContentView: View {
         }
         .buttonStyle(.plain)
         .focusable(false)
+        .padding(.top)
     }
 
 }
@@ -72,4 +73,5 @@ struct ContentView: View {
 #Preview {
     ContentView(netStatsManager: NetworkStatsManager(), netDetailsManager: NetworkDetailsManager())
         .environmentObject(Settings())
+        .frame(height: 350)
 }
