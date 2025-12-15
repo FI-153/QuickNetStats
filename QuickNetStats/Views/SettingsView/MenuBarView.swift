@@ -10,6 +10,7 @@ import SwiftUI
 struct MenuBarView: View {
     
     @ObservedObject var settings:Settings
+    @StateObject private var launchManager = LaunchAtLoginManager()
     
     var body: some View {
         Form {
@@ -21,8 +22,13 @@ struct MenuBarView: View {
             }
             
             Section {
-                ToggleView(title: "Launch at Login", variable: .constant(false))
-                
+                ToggleView(
+                    title: "Launch at Login",
+                    variable: Binding(
+                        get: { launchManager.isEnabled },
+                        set: { _ in launchManager.toggle() }
+                    )
+                )
             } header: {
                 Text("System Features")
             }
