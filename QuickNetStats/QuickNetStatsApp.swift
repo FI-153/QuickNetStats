@@ -13,7 +13,7 @@ struct QuickNetStatsApp: App {
     @StateObject var netStatsManager:NetworkStatsManager = NetworkStatsManager()
     @StateObject var netDetailsManager:NetworkDetailsManager = NetworkDetailsManager()
     @StateObject var settings:Settings = Settings()
-        
+    
     var body: some Scene {
         MenuBarExtra( content: {
             ContentView(
@@ -26,14 +26,16 @@ struct QuickNetStatsApp: App {
                 await netDetailsManager.getAddresses()
             }
             .environmentObject(settings)
-
+            
         }, label: {
-            if settings.showSummary {
-                Text(netStatsManager.netStats.summary)
+            if settings.showSummaryInMenu {
+                Text(
+                    "\(settings.showQualityInMenu ? netStatsManager.netStats.linkQualityDescription?.appending(" ") ?? "" : "")\(netStatsManager.netStats.summary)"
+                )
             } else {
                 Image(systemName: "network")
             }
-         }
+        }
         )
         .menuBarExtraStyle(.window)
         

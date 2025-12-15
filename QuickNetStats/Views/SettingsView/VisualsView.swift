@@ -14,8 +14,16 @@ struct VisualsView: View {
     var body: some View {
         Form {
             Section {
-                ToggleView(title: "Use Animations", variable: settings.$showSummary)
-                ToggleView(title: "Monotone Mode", variable: settings.$isColorful, description: "Use colors that change according to the quality of the network")
+                ToggleView(
+                    title: "Use Animations",
+                    variable: settings.$showSummaryInMenu
+                )
+                
+                ToggleView(
+                    title: "Colorful Mode",
+                    variable: settings.$isColorful,
+                    description: "Use colors that change according to the quality of the network"
+                )
             } header: {
                 Text("General")
             }

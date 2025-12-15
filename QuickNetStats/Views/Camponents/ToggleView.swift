@@ -12,6 +12,7 @@ struct ToggleView: View {
     let title:String
     let variable:Binding<Bool>
     var description:String?
+    var isDisabled:Bool?
     
     var body: some View {
         Toggle(isOn: variable){
@@ -28,6 +29,7 @@ struct ToggleView: View {
             }
         }
         .toggleStyle(.switch)
+        .disabled(isDisabled ?? false)
     }
 }
 
