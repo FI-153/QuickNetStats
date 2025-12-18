@@ -44,8 +44,11 @@ struct NetworkStats {
     /// If status is .unsatisfied, this provides the reason.
     let unsatisfiedReason: NWPath.UnsatisfiedReason?
     
-    /// Returns the qualirty of the connection
+    /// Returns the quality of the connection
     var linkQuality:LinkQuality?
+    
+    /// Describes as a string the network quality
+    var linkQualityDescription:String?
     
     // MARK: - Computed Properties
     
@@ -65,12 +68,12 @@ struct NetworkStats {
         if #available(macOS 26, *) {
             if let linkQuality = linkQuality {
                 if linkQuality != .unknown {
-                    quality = "\(linkQuality.rawValue.capitalized)"
+                    quality = "\(linkQuality.rawValue.capitalized) "
                 }
             }
         }
         
-        return "\(quality) \(interfaceType.rawValue.capitalized) Connection"
+        return "\(quality)\(interfaceType.rawValue.capitalized) Connection"
     }
     
     // MARK: - Initializers
@@ -128,12 +131,16 @@ struct NetworkStats {
             switch path.linkQuality {
             case .minimal:
                 self.linkQuality = .minimal
+                self.linkQualityDescription = "Minimal"
             case .moderate:
                 self.linkQuality = .moderate
+                self.linkQualityDescription = "Moderate"
             case .good:
                 self.linkQuality = .good
+                self.linkQualityDescription = "Good"
             default:
                 self.linkQuality = .unknown
+                self.linkQualityDescription = ""
             }
         }
         
