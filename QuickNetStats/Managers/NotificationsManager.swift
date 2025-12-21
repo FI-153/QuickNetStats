@@ -10,24 +10,41 @@ import Combine
 
 class NotificationsManager: ObservableObject {
     
-    private init(){}
+    private init(){
+        self.areNotificationsEnabled = false
+        checkNotificationStatus()
+    }
     
-    @Published var areNotificationsEnabled:Bool = false
+    /// It is set to true when the user authorizes notifications and they are allowed in the settings page. If they are disabled by the user in settings
+    /// then this value becomes false (eg. user authorized the app to send notifications but later disabled them in settings --> false)
+    @Published var areNotificationsEnabled:Bool
+    
     @Published var notificationAuthError:String?
     
     /// The shared instance of the NotificationsManager class
     static let shared = NotificationsManager()
     
+    /// Checks the current notification permission status from system settings
+    func checkNotificationStatus() -> Void {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            DispatchQueue.main.async {
+                self.areNotificationsEnabled = (settings.authorizationStatus == .authorized)
+            }
+        }
+    }
+    
     /// Request permisison to send a notification
     func requestNotificationPermission() {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-                print("Authorization Error: \(error.localizedDescription)")
-                self.notificationAuthError = error.localizedDescription
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("Authorization Error: \(error.localizedDescription)")
+                    self.notificationAuthError = error.localizedDescription
+                }
+                
+                self.areNotificationsEnabled = granted
             }
-            
-            self.areNotificationsEnabled = granted
         }
     }
     
