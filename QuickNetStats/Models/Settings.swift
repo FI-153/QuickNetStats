@@ -16,6 +16,7 @@ class Settings:ObservableObject {
         static let showQualityInMenu = "showQualityInMenu"
         static let useAnimations = "useAnimations"
         static let isColorful = "isColorful"
+        static let isNotificationActive = "isNotificationActive"
     }
     
     @AppStorage(UserDefaultsKeys.showSummaryInMenu)
@@ -29,5 +30,8 @@ class Settings:ObservableObject {
     
     @AppStorage(UserDefaultsKeys.isColorful)
     var isColorful: Bool = true
+    
+    @AppStorage(UserDefaultsKeys.isNotificationActive)
+    var isNotificationActive: Bool = false
 
 }

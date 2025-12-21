@@ -33,6 +33,8 @@ struct SettingsView: View {
                 MenuBarView(settings: settings)
             case .visuals:
                 VisualsView(settings: settings)
+            case .notifications:
+                NotificationView(settings: settings)
             case .about:
                 AboutView(settings: settings)
             }
