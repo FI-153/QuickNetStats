@@ -58,7 +58,8 @@ class NotificationsManager: ObservableObject {
     
     /// Send a notification with a notificaiton limit of one every `cooldown` seconds
     func notify(titled title:String, _ body :String) {
-        if Date() < Date().addingTimeInterval(cooldown) { return }
+        if Date() < self.previousNotifificationTime.addingTimeInterval(cooldown) { return }
+        self.previousNotifificationTime = Date()
         scheduleNotification(titled: title, body)
     }
     
@@ -77,6 +78,142 @@ class NotificationsManager: ObservableObject {
         )
     }
     
+    /// Checks if a notification should be sent based on the change in network statistics. If positive it sends the notificaion
+    /// The checks follow this order:
+    ///     1. Internet status
+    ///     2. Interface changes
+    ///     3. Link quality changes
+    func checkForNotifications(oldStats: NetworkStats, newStats: NetworkStats) {
+        let defaults = UserDefaults.standard
+        
+        // Check if notifications are globally enabled
+        guard defaults.bool(forKey: Settings.UserDefaultsKeys.isNotificationActive) else { return }
+        
+        self.checkInternetStatusChanges(
+            wasConnected: oldStats.isConnected,
+            isConnected: newStats.isConnected,
+            newInterface: newStats.interfaceType
+        )
+        
+        self.checkInterfaceChanges(
+            wasConnected: oldStats.isConnected,
+            isConnected: newStats.isConnected,
+            oldInterface: oldStats.interfaceType,
+            newInterface: newStats.interfaceType
+        )
+        
+        self.checkLinkQualityChanges(
+            oldQuality: oldStats.linkQuality?.rawValue ?? 0,
+            newQuality: newStats.linkQuality?.rawValue ?? 0
+        )
+    }
+    
+    /// Check internet status changes based on what the user configured on the settings.
+    /// If the status has changes and the notification cooldown is over then send the notification
+    private func checkInternetStatusChanges(
+        wasConnected:Bool,
+        isConnected:Bool,
+        newInterface:NetworkInterfaceType,
+        defaults:UserDefaults = UserDefaults.standard
+    ) {
+        let internetNotificationsBehavior = InternetNotificationBehavior(
+            rawValue: defaults.integer(forKey: Settings.UserDefaultsKeys.notifyInternetBehavior)
+        ) ?? .connects
+                
+        if wasConnected != isConnected {
+            var shouldNotify = false
+            var title = ""
+            var body = ""
+            
+            switch internetNotificationsBehavior {
+            case .connects:
+                if isConnected {
+                    shouldNotify = true
+                    title = "Internet Connected"
+                    body = "You are now connected to \(newInterface.rawValue)"
+                }
+            case .disconnects:
+                if !isConnected {
+                    shouldNotify = true
+                    title = "Internet Disconnected"
+                    body = "You are now disconnected from the internet"
+                }
+            case .changes:
+                shouldNotify = true
+                if isConnected {
+                    title = "Internet Connected"
+                    body = "You are now connected to \(newInterface.rawValue)"
+                } else {
+                    title = "Internet Disconnected"
+                    body = "You are now disconnected from the internet"
+                }
+            }
+            
+            if shouldNotify {
+                NotificationsManager.shared.notify(titled: title, body)
+            }
+        }
+    }
+    
+    /// Check the link quality changes based on what the user configured on the settings
+    /// If the status has changes and the notification cooldown is over then send the notification
+    private func checkLinkQualityChanges(
+        oldQuality:Int,
+        newQuality:Int,
+        defaults:UserDefaults = UserDefaults.standard
+    ) {
+        let liknQualityNotificationsBehavior = LinkQualityNotificationBehavior(
+            rawValue: defaults
+                .integer(
+                    forKey: Settings.UserDefaultsKeys.notifyQualityBehavior
+                )
+        ) ?? .changes
+                
+        if oldQuality != newQuality {
+            var shouldNotify = false
+            var title = ""
+            
+            switch liknQualityNotificationsBehavior {
+            case .improves:
+                if newQuality > oldQuality {
+                    shouldNotify = true
+                    title = "Network Quality Improved"
+                }
+            case .worsens:
+                if newQuality < oldQuality {
+                    shouldNotify = true
+                    title = "Network Quality Worsened"
+                }
+            case .changes:
+                shouldNotify = true
+                title = "Network Quality \(newQuality > oldQuality ? "Improved" : "Worsened")"
+            }
+            
+            if shouldNotify {
+                NotificationsManager.shared.notify(titled: title, "")
+            }
+        }
+    }
+    
+    /// Check if the interface changed and notiffies if the user toggled this notification
+    /// If the status has changes and the notification cooldown is over then send the notification
+    private func checkInterfaceChanges(
+        wasConnected:Bool,
+        isConnected:Bool,
+        oldInterface:NetworkInterfaceType,
+        newInterface:NetworkInterfaceType,
+        defaults:UserDefaults = UserDefaults.standard
+    ) {
+        if defaults.bool(forKey: Settings.UserDefaultsKeys.notifyInterfaceChanges) {
+            if wasConnected && isConnected && oldInterface != newInterface {
+                NotificationsManager.shared.notify(
+                    titled: "Network Changed",
+                    "Switched to \(newInterface.rawValue.capitalized)"
+                )
+            }
+        }
+    }
+
 }
 
 class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
