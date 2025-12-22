@@ -12,8 +12,13 @@ class NotificationsManager: ObservableObject {
     
     private init(){
         self.areNotificationsEnabled = false
+        self.cooldown = 0.5
+        self.previousNotifificationTime = Date.distantPast
         checkNotificationStatus()
     }
+    
+    /// The shared instance of the NotificationsManager class
+    static let shared = NotificationsManager()
     
     /// It is set to true when the user authorizes notifications and they are allowed in the settings page. If they are disabled by the user in settings
     /// then this value becomes false (eg. user authorized the app to send notifications but later disabled them in settings --> false)
@@ -21,9 +26,12 @@ class NotificationsManager: ObservableObject {
     
     @Published var notificationAuthError:String?
     
-    /// The shared instance of the NotificationsManager class
-    static let shared = NotificationsManager()
+    /// The cooldown time in seconds between two notificaitons
+    private var cooldown:Double
     
+    /// The last time a notification was sent
+    private var previousNotifificationTime:Date
+        
     /// Checks the current notification permission status from system settings
     func checkNotificationStatus() -> Void {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
@@ -48,8 +56,14 @@ class NotificationsManager: ObservableObject {
         }
     }
     
+    /// Send a notification with a notificaiton limit of one every `cooldown` seconds
+    func notify(titled title:String, _ body :String) {
+        if Date() < Date().addingTimeInterval(cooldown) { return }
+        scheduleNotification(titled: title, body)
+    }
+    
     /// Schedule a notification to be sent immediatelly
-    func scheduleNotification(titled title:String, _ body :String) {
+    private func scheduleNotification(titled title:String, _ body :String) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body

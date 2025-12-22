@@ -55,7 +55,7 @@ struct LinkQualityView: View {
             
             Group {
                 if linkQuality != .unknown {
-                    Text(linkQuality.rawValue.capitalized)
+                    Text(linkQuality.description)
                 } else {
                     Text("Computing...")
                         .foregroundStyle(linkQualityColor)
