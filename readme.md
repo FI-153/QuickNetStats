@@ -26,7 +26,7 @@ QuickNetStats instead:
 - Displays an estimate of the **link quality** without a speedtest;
 - Lets you see and copy your IPV4 addresses at a glance.
 
-## 📦 Installation (Homebrew)
+## 🍺 Homebrew Installation (Recommended)
 You can install this easily as a cask using  **Homebrew**.
 ### 1. Add the tap
 ```bash
@@ -41,6 +41,13 @@ To update just use
 ``` bash
 brew update && brew upgrade quicknetstats
 ```
+
+## 💾 Direct Download
+Download the app then move it from the Downloads folder to the Applications folder
+
+<a href="https://github.com/FI-153/QuickNetStats/releases/download/V.2.0.0/QuickNetStats.app.zip">
+  <img src="https://img.shields.io/badge/Download-QuickNetStats%20for%20macOS-FFFFFF?style=for-the-badge&logo=apple" alt="Download QuickNetStats for macOS"/>
+</a>
 
 ## 🛠️ Build from Source
 You can also clone this repo, open the project in Xcode and build the app from scratch. If you considered this route you probably don't need any more instruction!

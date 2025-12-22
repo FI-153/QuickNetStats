@@ -12,7 +12,7 @@ import Combine
 class SettingsViewModel: ObservableObject {
         
     enum SettingsPage: String, CaseIterable, Identifiable {
-        case menubar, visuals, about
+        case menubar, visuals, notifications, about 
         
         var id: String { self.rawValue }
         
@@ -21,6 +21,7 @@ class SettingsViewModel: ObservableObject {
             case .menubar: return "Menu Bar"
             case .visuals: return "Visuals"
             case .about: return "About"
+            case .notifications: return "Notifications"
             }
         }
         
@@ -29,6 +30,7 @@ class SettingsViewModel: ObservableObject {
             case .menubar: return "menubar.rectangle"
             case .visuals: return "accessibility"
             case .about: return "info.circle"
+            case .notifications: return "bell.badge"
             }
         }
         
@@ -37,6 +39,7 @@ class SettingsViewModel: ObservableObject {
             case .menubar: return Color.red
             case .visuals: return Color.blue
             case .about: return Color.gray
+            case .notifications: return Color.green
             }
         }
     }

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 @main
 struct QuickNetStatsApp: App {
@@ -13,6 +14,12 @@ struct QuickNetStatsApp: App {
     @StateObject var netStatsManager:NetworkStatsManager = NetworkStatsManager()
     @StateObject var netDetailsManager:NetworkDetailsManager = NetworkDetailsManager()
     @StateObject var settings:Settings = Settings()
+    
+    let notificationDelegate = NotificationDelegate()
+    
+    init() {
+        UNUserNotificationCenter.current().delegate = notificationDelegate
+    }
     
     var body: some Scene {
         MenuBarExtra( content: {

@@ -22,11 +22,15 @@ class NetworkStatsManager:ObservableObject {
     /// Track if the monitor is monitoring to avoid multiple monitoring sessions.
     private var isMonitoring:Bool
     
+    /// Track if it is the first update to avoid sending notifications on launch
+    private var isFirstUpdate:Bool
+    
     init() {
         self.monitor = NWPathMonitor()
         self.queue = DispatchQueue(label: "com.quickconncheck.networkMonitor")
         self.netStats = NetworkStats.defaultOffline
         self.isMonitoring = false
+        self.isFirstUpdate = true
         startMonitoring()
     }
         
@@ -40,7 +44,22 @@ class NetworkStatsManager:ObservableObject {
             
             // Update the published netStats property on the main thread
             DispatchQueue.main.async {
-                self?.netStats = NetworkStats(path: path)
+                guard let self = self else { return }
+                
+                let newStats = NetworkStats(path: path)
+                
+                if self.isFirstUpdate {
+                    self.isFirstUpdate = false
+                    self.netStats = newStats
+                    return
+                }
+                
+                NotificationsManager.shared.checkForNotifications(
+                    oldStats: self.netStats,
+                    newStats: newStats
+                )
+                
+                self.netStats = newStats
             }
         }
         
@@ -72,7 +91,7 @@ class NetworkStatsManager:ObservableObject {
         stopMonitoring()
         startMonitoring()
     }
-    
+        
     deinit {
         stopMonitoring()
     }
