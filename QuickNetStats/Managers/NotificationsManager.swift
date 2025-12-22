@@ -49,14 +49,14 @@ class NotificationsManager: ObservableObject {
     }
     
     /// Schedule a notification to be sent immediatelly
-    func scheduleNotification(with title:String, _ body :String) {
+    func scheduleNotification(titled title:String, _ body :String) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
         content.sound = .default
 
         // Trigger: now
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0, repeats: false)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
 
         UNUserNotificationCenter.current().add(
             UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
