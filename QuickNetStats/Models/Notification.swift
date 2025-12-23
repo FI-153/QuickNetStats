@@ -24,7 +24,13 @@ class Notification: Identifiable, Comparable {
     }
     
     static func < (lhs: Notification, rhs: Notification) -> Bool {
-        lhs.priority < rhs.priority && lhs.created < rhs.created && lhs.title < rhs.title
+        if lhs.priority != rhs.priority {
+            return lhs.priority < rhs.priority
+        }
+        if lhs.created != rhs.created {
+            return lhs.created < rhs.created
+        }
+        return lhs.title < rhs.title
     }
     
     static func == (lhs: Notification, rhs: Notification) -> Bool {

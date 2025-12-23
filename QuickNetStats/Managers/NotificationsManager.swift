@@ -127,13 +127,24 @@ class NotificationsManager: ObservableObject {
     /// Send the most important notification on the `notificationStack` if the `cooldown` period has passed.
     /// If a notificaiton is sent, it then empties `notificationStack` and sets a new `previousNotifificationTime`
     private func sendMostImportantNotificationOnStack() {
-        if Date() >= self.previousNotifificationTime
-            .addingTimeInterval(self.cooldown) {
+        let now = Date()
+        let nextAllowedTime = self.previousNotifificationTime.addingTimeInterval(self.cooldown)
+        
+        if now >= nextAllowedTime {
             if !notificationStack.isEmpty {
                 notificationStack.sort()
                 self.notify(notificationStack.removeFirst())
                 self.notificationStack = []
                 self.previousNotifificationTime = Date()
+            }
+        } else {
+            // If we are within the cooldown period and have pending notifications,
+            // schedule a check for when the cooldown expires.
+            if !notificationStack.isEmpty {
+                let delay = nextAllowedTime.timeIntervalSince(now)
+                DispatchQueue.main.asyncAfter(deadline: .now() + max(0, delay)) { [weak self] in
+                    self?.sendMostImportantNotificationOnStack()
+                }
             }
         }
     }
@@ -245,11 +256,11 @@ class NotificationsManager: ObservableObject {
         oldInterface:NetworkInterfaceType,
         newInterface:NetworkInterfaceType,
         defaults:UserDefaults = UserDefaults.standard
-    ) -> LinkQualityStatusNotification? {
+    ) -> InterfaceChangesStatusNotification? {
         if defaults.bool(forKey: Settings.UserDefaultsKeys.notifyInterfaceChanges) {
             if wasConnected && isConnected && oldInterface != newInterface {
-                return LinkQualityStatusNotification(
-                    title: "Network Changed",
+                return InterfaceChangesStatusNotification(
+                    title: "Network Interface Changed",
                     body: "Switched to \(newInterface.rawValue.capitalized)",
                     created: Date()
                 )
