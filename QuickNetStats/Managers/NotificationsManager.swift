@@ -12,8 +12,9 @@ class NotificationsManager: ObservableObject {
     
     private init(){
         self.areNotificationsEnabled = false
-        self.cooldown = 0.5
+        self.cooldown = 0.2
         self.previousNotifificationTime = Date.distantPast
+        self.notificationStack = []
         checkNotificationStatus()
     }
     
@@ -31,6 +32,9 @@ class NotificationsManager: ObservableObject {
     
     /// The last time a notification was sent
     private var previousNotifificationTime:Date
+    
+    /// A stack that collects all notifications requests
+    private var notificationStack:[Notification]
         
     /// Checks the current notification permission status from system settings
     func checkNotificationStatus() -> Void {
@@ -56,11 +60,14 @@ class NotificationsManager: ObservableObject {
         }
     }
     
-    /// Send a notification with a notificaiton limit of one every `cooldown` seconds
+    /// Send a notification
     func notify(titled title:String, _ body :String) {
-        if Date() < self.previousNotifificationTime.addingTimeInterval(cooldown) { return }
-        self.previousNotifificationTime = Date()
         scheduleNotification(titled: title, body)
+    }
+    
+    /// Send a notification
+    func notify(_ notification:Notification) {
+        scheduleNotification(titled: notification.title, notification.body)
     }
     
     /// Schedule a notification to be sent immediatelly
@@ -78,34 +85,68 @@ class NotificationsManager: ObservableObject {
         )
     }
     
-    /// Checks if a notification should be sent based on the change in network statistics. If positive it sends the notificaion
-    /// The checks follow this order:
-    ///     1. Internet status
-    ///     2. Interface changes
-    ///     3. Link quality changes
+    private func notificationsGloballyEnabled() -> Bool {
+        UserDefaults.standard.bool(forKey: Settings.UserDefaultsKeys.isNotificationActive)
+    }
+        
+    /// Queue notifications to be sent once every `cooldown` period
     func checkForNotifications(oldStats: NetworkStats, newStats: NetworkStats) {
-        let defaults = UserDefaults.standard
         
-        // Check if notifications are globally enabled
-        guard defaults.bool(forKey: Settings.UserDefaultsKeys.isNotificationActive) else { return }
+        guard self.notificationsGloballyEnabled() else { return }
         
-        self.checkInternetStatusChanges(
+        // Internet onnection
+        if let new_notification = self.checkInternetStatusChanges(
             wasConnected: oldStats.isConnected,
             isConnected: newStats.isConnected,
-            newInterface: newStats.interfaceType
-        )
+            newInterface: newStats.interfaceType,
+        ) {
+            notificationStack.append(new_notification)
+        }
         
-        self.checkInterfaceChanges(
+        // Interface
+        if let new_notification = self.checkInterfaceChanges(
             wasConnected: oldStats.isConnected,
             isConnected: newStats.isConnected,
             oldInterface: oldStats.interfaceType,
             newInterface: newStats.interfaceType
-        )
+        ) {
+            notificationStack.append(new_notification)
+        }
         
-        self.checkLinkQualityChanges(
+        // Link quality
+        if let new_notification = self.checkLinkQualityChanges(
             oldQuality: oldStats.linkQuality?.rawValue ?? 0,
             newQuality: newStats.linkQuality?.rawValue ?? 0
-        )
+        ) {
+            notificationStack.append(new_notification)
+        }
+                
+        sendMostImportantNotificationOnStack()
+    }
+    
+    /// Send the most important notification on the `notificationStack` if the `cooldown` period has passed.
+    /// If a notificaiton is sent, it then empties `notificationStack` and sets a new `previousNotifificationTime`
+    private func sendMostImportantNotificationOnStack() {
+        let now = Date()
+        let nextAllowedTime = self.previousNotifificationTime.addingTimeInterval(self.cooldown)
+        
+        if now >= nextAllowedTime {
+            if !notificationStack.isEmpty {
+                notificationStack.sort()
+                self.notify(notificationStack.removeFirst())
+                self.notificationStack = []
+                self.previousNotifificationTime = Date()
+            }
+        } else {
+            // If we are within the cooldown period and have pending notifications,
+            // schedule a check for when the cooldown expires.
+            if !notificationStack.isEmpty {
+                let delay = nextAllowedTime.timeIntervalSince(now)
+                DispatchQueue.main.asyncAfter(deadline: .now() + max(0, delay)) { [weak self] in
+                    self?.sendMostImportantNotificationOnStack()
+                }
+            }
+        }
     }
     
     /// Check internet status changes based on what the user configured on the settings.
@@ -115,7 +156,7 @@ class NotificationsManager: ObservableObject {
         isConnected:Bool,
         newInterface:NetworkInterfaceType,
         defaults:UserDefaults = UserDefaults.standard
-    ) {
+    ) -> InternetStatusNotification? {
         let internetNotificationsBehavior = InternetNotificationBehavior(
             rawValue: defaults.integer(forKey: Settings.UserDefaultsKeys.notifyInternetBehavior)
         ) ?? .connects
@@ -150,9 +191,15 @@ class NotificationsManager: ObservableObject {
             }
             
             if shouldNotify {
-                NotificationsManager.shared.notify(titled: title, body)
+                return InternetStatusNotification(
+                    title: title,
+                    body: body,
+                    created: Date()
+                )
             }
         }
+        
+        return nil
     }
     
     /// Check the link quality changes based on what the user configured on the settings
@@ -161,7 +208,7 @@ class NotificationsManager: ObservableObject {
         oldQuality:Int,
         newQuality:Int,
         defaults:UserDefaults = UserDefaults.standard
-    ) {
+    ) -> LinkQualityStatusNotification? {
         let liknQualityNotificationsBehavior = LinkQualityNotificationBehavior(
             rawValue: defaults
                 .integer(
@@ -190,9 +237,15 @@ class NotificationsManager: ObservableObject {
             }
             
             if shouldNotify {
-                NotificationsManager.shared.notify(titled: title, "")
+                return LinkQualityStatusNotification(
+                    title: title,
+                    body: "",
+                    created: Date()
+                )
             }
         }
+        
+        return nil
     }
     
     /// Check if the interface changed and notiffies if the user toggled this notification
@@ -203,17 +256,20 @@ class NotificationsManager: ObservableObject {
         oldInterface:NetworkInterfaceType,
         newInterface:NetworkInterfaceType,
         defaults:UserDefaults = UserDefaults.standard
-    ) {
+    ) -> InterfaceChangesStatusNotification? {
         if defaults.bool(forKey: Settings.UserDefaultsKeys.notifyInterfaceChanges) {
             if wasConnected && isConnected && oldInterface != newInterface {
-                NotificationsManager.shared.notify(
-                    titled: "Network Changed",
-                    "Switched to \(newInterface.rawValue.capitalized)"
+                return InterfaceChangesStatusNotification(
+                    title: "Network Interface Changed",
+                    body: "Switched to \(newInterface.rawValue.capitalized)",
+                    created: Date()
                 )
             }
         }
+        
+        return nil
     }
-
+    
 }
 
 class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
