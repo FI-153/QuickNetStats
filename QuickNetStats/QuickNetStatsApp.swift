@@ -22,30 +22,34 @@ struct QuickNetStatsApp: App {
     }
     
     var body: some Scene {
-        MenuBarExtra( content: {
-            ContentView(
-                netStatsManager: netStatsManager,
-                netDetailsManager: netDetailsManager
-            )
-            .padding()
-            .frame(width: 550)
-            .task {
-                await netDetailsManager.getAddresses()
+        MenuBarExtra(
+            content: {
+                ContentView(
+                    netStatsManager: netStatsManager,
+                    netDetailsManager: netDetailsManager
+                )
+                .padding()
+                .frame(width: 550)
+                .task {
+                    await netDetailsManager.getAddresses()
+                }
+                .environmentObject(settings)
+                
+            },
+            label: {
+                if settings.showSummaryInMenu {
+                    Text(
+                        settings.showQualityInMenu ? netStatsManager.netStats.fullSummary : netStatsManager.netStats.shortSummary
+                    )
+                } else {
+                    Image(systemName: "network")
+                }
             }
-            .environmentObject(settings)
-            
-        }, label: {
-            if settings.showSummaryInMenu {
-                Text(netStatsManager.netStats.summary)
-            } else {
-                Image(systemName: "network")
-            }
-        }
         )
         .menuBarExtraStyle(.window)
         
         // Scene 2: The Settings Window
-        WindowGroup(id: "settings-window") {
+        Window("Settings", id: "settings-window") {
             SettingsView() // Replace with your actual Settings View
                 .environmentObject(settings)
                 .frame(minWidth: 300, minHeight: 400) // Set reasonable defaults
