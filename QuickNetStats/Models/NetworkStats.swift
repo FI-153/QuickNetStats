@@ -56,11 +56,11 @@ struct NetworkStats {
         return status == .satisfied
     }
     
-    /// Summarizes the state of the connection in a sentence that can be shown to the user
-    var summary:String {
+    /// Summarizes the state of the connection in a short sentence describing the current interface and network quality
+    var fullSummary:String {
         
         if interfaceType == .none {
-            return "No Connection"
+            return shortSummary
         }
         
         // Only show the quality for macOS 26+
@@ -73,8 +73,19 @@ struct NetworkStats {
             }
         }
         
-        return "\(quality)\(interfaceType.rawValue.capitalized) Connection"
+        return "\(quality)\(shortSummary)"
     }
+    
+    /// Summarizes the state of the connection in a short sentence describing the current interface
+    var shortSummary:String {
+        
+        if interfaceType == .none {
+            return "No Connection"
+        }
+                
+        return "\(interfaceType.rawValue.capitalized) Connection"
+    }
+
     
     // MARK: - Initializers
     
