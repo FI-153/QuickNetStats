@@ -28,18 +28,18 @@ struct ContentView: View {
             
             footerButtonsSection
         }
+        .overlay(alignment: .topTrailing) {
+            headerButtonsSection
+        }
         
     }
     
     var footerButtonsSection: some View {
         return HStack(spacing: 40) {            
             Button {
-                Task {
-                    netStatsManager.refresh()
-                    await netDetailsManager.deleteAndGetAddresses()
-                }
+                openNetworkSettings()
             } label: {
-                FooterButtonLabelView(labelText: "Refresh", systemName: "arrow.trianglehead.counterclockwise")
+                FooterButtonLabelView(labelText: "Network Settings", systemName: "network")
             }
             
             Button {
@@ -52,6 +52,31 @@ struct ContentView: View {
         .buttonStyle(.plain)
         .focusable(false)
         .padding(.top)
+    }
+    
+    var headerButtonsSection: some View {
+        Button {
+            Task {
+                netStatsManager.refresh()
+                await netDetailsManager.deleteAndGetAddresses()
+            }
+        } label: {
+            Image(systemName: "arrow.trianglehead.counterclockwise")
+                .resizable()
+                .fontWeight(.semibold)
+                .scaledToFit()
+                .frame(width: 20)
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing)
+    }
+    
+    private func openNetworkSettings() {
+        let urlString = "x-apple.systempreferences:com.apple.Network"
+        
+        if let url = URL(string: urlString) {
+            NSWorkspace.shared.open(url)
+        }
     }
 
 }
