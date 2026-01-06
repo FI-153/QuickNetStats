@@ -1,0 +1,133 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - 'V*'
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: macos-latest
+    env:
+      XC_SCHEME: QuickNetStats
+      XC_PROJECT: QuickNetStats.xcodeproj
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Apple Certificate
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+        run: |
+          # Create variables
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          KEYCHAIN_PASSWORD=$(uuidgen)
+
+          # Import certificate and provisioning profile from secrets
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+
+          # Create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # Import certificate to keychain
+          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+          
+          # Avoid UI permission prompts
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+      - name: Set Version from Tag
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          # Clean version string (remove v or V prefix)
+          VERSION=${TAG#[vV]}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "TAG_NAME=$TAG" >> $GITHUB_ENV
+
+      - name: Archive App
+        run: |
+          # Build the archive
+          # We override MARKETING_VERSION to match the tag
+          xcodebuild archive \
+            -project $XC_PROJECT \
+            -scheme $XC_SCHEME \
+            -configuration Release \
+            -archivePath $RUNNER_TEMP/QuickNetStats.xcarchive \
+            -allowProvisioningUpdates \
+            MARKETING_VERSION=$VERSION \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Developer ID Application" \
+            DEVELOPMENT_TEAM=${{ secrets.DEVELOPMENT_TEAM_ID }}
+
+      - name: Export App
+        run: |
+          # Zip the .app from the archive
+          # The app is located at Products/Applications/QuickNetStats.app inside the archive
+          cd $RUNNER_TEMP/QuickNetStats.xcarchive/Products/Applications
+          zip -r $GITHUB_WORKSPACE/QuickNetStats.app.zip QuickNetStats.app
+
+      - name: Calculate Hash
+        id: shasum
+        run: |
+          HASH=$(shasum -a 256 QuickNetStats.app.zip | awk '{print $1}')
+          echo "SHA256=$HASH" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: QuickNetStats.app.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout Tap Repository
+        uses: actions/checkout@v4
+        with:
+          repository: FI-153/homebrew-tap
+          token: ${{ secrets.TAP_GITHUB_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update Homebrew Cask
+        run: |
+          cd homebrew-tap/Casks
+          
+          # Determine if beta or stable based on tag
+          if [[ "${{ env.TAG_NAME }}" == *"beta"* ]] || [[ "${{ env.TAG_NAME }}" == *"Beta"* ]]; then
+             CASK_FILE="quicknetstats@beta.rb"
+             echo "Detected Beta release. Updating $CASK_FILE..."
+          else
+             CASK_FILE="quicknetstats.rb"
+             echo "Detected Stable release. Updating $CASK_FILE..."
+          fi
+          
+          # Construct the new URL
+          NEW_URL="https://github.com/${{ github.repository }}/releases/download/${{ env.TAG_NAME }}/QuickNetStats.app.zip"
+          
+          # Update Version
+          sed -i '' "s/version ".*"/version "${{ env.VERSION }}"/" $CASK_FILE
+          
+          # Update SHA256
+          sed -i '' "s/sha256 ".*"/sha256 "${{ env.SHA256 }}"/" $CASK_FILE
+          
+          # Update URL
+          # Using | as delimiter
+          sed -i '' "s|url ".*"|url \"$NEW_URL\"|" $CASK_FILE
+          
+          # Check if file changed
+          if git diff --quiet $CASK_FILE; then
+            echo "No changes detected in $CASK_FILE"
+          else
+            # Config git
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            
+            # Commit and push
+            git add $CASK_FILE
+            git commit -m "Update QuickNetStats to ${{ env.VERSION }}"
+            git push
+          fi
