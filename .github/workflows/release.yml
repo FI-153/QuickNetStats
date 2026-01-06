@@ -40,6 +40,12 @@ jobs:
           security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -k $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
           
+          # Install Provisioning Profile
+          PP_PATH=$RUNNER_TEMP/build_pp.provisionprofile
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo -n "${{ secrets.PROVISIONING_PROFILE_BASE64 }}" | base64 --decode -o $PP_PATH
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+
           # Avoid UI permission prompts
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
