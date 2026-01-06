@@ -45,6 +45,10 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           echo -n "${{ secrets.PROVISIONING_PROFILE_BASE64 }}" | base64 --decode -o $PP_PATH
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+          
+          # Get UUID from the profile
+          PP_UUID=$(strings $PP_PATH | grep -A1 "<key>UUID</key>" | tail -1 | sed 's/.*<string>\(.*\)<\/string>.*/\1/')
+          echo "PP_UUID=$PP_UUID" >> $GITHUB_ENV
 
           # Avoid UI permission prompts
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
@@ -70,6 +74,7 @@ jobs:
             MARKETING_VERSION=$VERSION \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Developer ID Application" \
+            PROVISIONING_PROFILE_SPECIFIER=$PP_UUID \
             DEVELOPMENT_TEAM=${{ secrets.DEVELOPMENT_TEAM_ID }}
 
       - name: Export App
