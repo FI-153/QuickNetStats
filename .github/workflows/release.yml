@@ -48,7 +48,7 @@ jobs:
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
           
           # Get UUID from the profile
-          PP_UUID=$(strings "$PP_PATH" | grep -A1 "<key>UUID</key>" | tail -1 | sed 's/.*<string>\(.*\)<\/string>.*/\1/')
+          PP_UUID=$(security cms -D -i "$PP_PATH" | grep -A1 "<key>UUID</key>" | tail -1 | sed 's/.*<string>\(.*\)<\/string>.*/\1/')
           
           if [ -z "$PP_UUID" ]; then
             echo "Error: Could not extract UUID from provisioning profile."
