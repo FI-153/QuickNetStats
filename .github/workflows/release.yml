@@ -25,11 +25,13 @@ jobs:
         run: |
           # Create variables
           CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          PP_PATH=$RUNNER_TEMP/build_pp.provisionprofile
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
           KEYCHAIN_PASSWORD=$(uuidgen)
 
           # Import certificate and provisioning profile from secrets
           echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+          echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o $PP_PATH
 
           # Create temporary keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
@@ -40,11 +42,9 @@ jobs:
           security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t agg -k $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
-          
+
           # Install Provisioning Profile
-          PP_PATH=$RUNNER_TEMP/build_pp.provisionprofile
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo -n "${{ secrets.PROVISIONING_PROFILE_BASE64 }}" | base64 --decode -o $PP_PATH
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
           
           # Get UUID from the profile
