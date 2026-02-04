@@ -13,6 +13,7 @@ QuickNetStats is a macOS Menu Bar application that provides real-time network st
 
 *   `QuickNetStats/`
     *   `QuickNetStatsApp.swift`: The main entry point of the application, defining the `MenuBarExtra`.
+    *   `QuickNetStats.entitlements`: App sandbox entitlements.
     *   `Managers/`: Contains the core logic for network monitoring.
         *   `NetworkStatsManager.swift`: Monitors network changes (WiFi, Ethernet, etc.) using `NWPathMonitor`.
         *   `NetworkDetailsManager.swift`: Fetches public (via `api.ipify.org`) and private IP addresses.
@@ -21,20 +22,32 @@ QuickNetStats is a macOS Menu Bar application that provides real-time network st
         *   `UpdateManager.swift`: Checks for app updates via GitHub Releases.
     *   `Models/`: Data models used throughout the app.
         *   `NetworkStats.swift`: Represents the current network state.
+        *   `Notification.swift`: Represents a user-facing notification.
         *   `Settings.swift`: Manages user preferences.
     *   `Views/`: SwiftUI views.
         *   `ContentView.swift`: The main view displayed when clicking the menu bar icon.
-        *   `Camponents/`: Reusable UI components (`AddressView`, `LinkQualityView`, etc.).
-        *   `Modifiers/`: View modifiers (e.g., `ShimmerEffect`).
+        *   `Camponents/`: Reusable UI components.
+            *   `AddressView.swift`
+            *   `FooterButtonLabelView.swift`
+            *   `LinkQualityView.swift`
+            *   `NetworkInterfaceView.swift`
+            *   `PickerView.swift`
+            *   `ToggleView.swift`
+        *   `Modifiers/`: View modifiers.
+            *   `ShimmerEffect.swift`
         *   `NetStatsView/`:
             *   `NetStatsView.swift`: Display of network statistics.
             *   `NetStatsViewModel.swift`: ViewModel for network stats logic.
         *   `SettingsView/`:
             *   `SettingsView.swift`: The settings window UI.
             *   `SettingsViewModel.swift`: ViewModel for settings logic.
-            *   `AboutView.swift`, `MenuBarView.swift`, `VisualsView.swift`: Settings sub-pages.
+            *   `AboutView.swift`
+            *   `MenuBarView.swift`
+            *   `NotificationView.swift`
+            *   `VisualsView.swift`
     *   `quicknetstats.icon/`: Source files for the application icon.
-    *   `Assets/`: Static assets (images, icons).
+    *   `Assets.xcassets/`: Image and color assets for the application.
+
 
 ## Building and Running
 
