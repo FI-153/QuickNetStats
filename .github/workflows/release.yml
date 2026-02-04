@@ -22,7 +22,9 @@ jobs:
         run: |
           TAG_NAME=${{ github.event.release.tag_name }}
           # Remove v or V prefix
-          VERSION=${TAG_NAME#[vV]}
+          VERSION_TEMP=${TAG_NAME#[vV]}
+          # Remove leading dot if present (e.g., from V.1.2.3 -> .1.2.3 -> 1.2.3)
+          VERSION=${VERSION_TEMP#.}
           
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_ENV
