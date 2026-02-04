@@ -33,6 +33,8 @@ struct SettingsView: View {
                 MenuBarView(settings: settings)
             case .visuals:
                 VisualsView(settings: settings)
+            case .notifications:
+                NotificationView(settings: settings)
             case .about:
                 AboutView(settings: settings)
             }
@@ -68,11 +70,11 @@ struct SettingsView: View {
             Image(systemName: page.icon)
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundStyle(page.color)
                 .frame(width: 40, height: 40)
-                .background(
-                    page.color
+                .clipShape(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 16))
             
             Text(page.title)
                 .font(.title3)

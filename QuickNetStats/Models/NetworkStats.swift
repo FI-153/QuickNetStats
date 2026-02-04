@@ -18,8 +18,24 @@ enum NetworkInterfaceType: String {
     case none = "None"
 }
 
-enum LinkQuality: String {
-    case good, moderate, minimal, unknown
+enum LinkQuality: Int, Identifiable, CaseIterable {
+    case good = 3, moderate = 2, minimal = 1, unknown = 0
+    var id: Int {self.rawValue}
+    var description: String {
+        switch self {
+        case .minimal:
+            return "Minimal"
+        case .moderate:
+            return "Moderate"
+        case .good:
+            return "Good"
+        case .unknown:
+            return "Unknown"
+        @unknown default:
+            return String(describing: self)
+        }
+    }
+
 }
 
 struct NetworkStats {
@@ -68,7 +84,7 @@ struct NetworkStats {
         if #available(macOS 26, *) {
             if let linkQuality = linkQuality {
                 if linkQuality != .unknown {
-                    quality = "\(linkQuality.rawValue.capitalized) "
+                    quality = "\(linkQuality.description) "
                 }
             }
         }

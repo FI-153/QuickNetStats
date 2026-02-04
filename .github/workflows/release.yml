@@ -1,0 +1,79 @@
+name: Update Homebrew Tap
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-tap:
+    name: Update Tap
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Tap Repository
+        uses: actions/checkout@v4
+        with:
+          repository: FI-153/homebrew-tap
+          token: ${{ secrets.TAP_GITHUB_TOKEN }}
+          path: homebrew-tap
+
+      - name: Get Release Info
+        id: info
+        run: |
+          TAG_NAME=${{ github.event.release.tag_name }}
+          # Remove v or V prefix
+          VERSION=${TAG_NAME#[vV]}
+          
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          
+          # Construct download URL assuming standard asset naming
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/$TAG_NAME/QuickNetStats.app.zip"
+          echo "DOWNLOAD_URL=$DOWNLOAD_URL" >> $GITHUB_ENV
+
+      - name: Download Asset & Calculate Hash
+        run: |
+          echo "Downloading from: $DOWNLOAD_URL"
+          curl -L -o QuickNetStats.app.zip "$DOWNLOAD_URL"
+          
+          # Calculate SHA256 (Ubuntu uses sha256sum)
+          HASH=$(sha256sum QuickNetStats.app.zip | awk '{print $1}')
+          echo "SHA256=$HASH" >> $GITHUB_ENV
+          echo "Calculated Hash: $HASH"
+
+      - name: Update Homebrew Cask
+        run: |
+          cd homebrew-tap/Casks
+          
+          # Determine if beta or stable based on tag
+          if [[ "${{ env.TAG_NAME }}" == *"beta"* ]] || [[ "${{ env.TAG_NAME }}" == *"Beta"* ]]; then
+             CASK_FILE="quicknetstats@beta.rb"
+             echo "Detected Beta release. Updating $CASK_FILE..."
+          else
+             CASK_FILE="quicknetstats.rb"
+             echo "Detected Stable release. Updating $CASK_FILE..."
+          fi
+          
+          # Update Version
+          sed -i "s/version ".*"/version "${{ env.VERSION }}"/" $CASK_FILE
+          
+          # Update SHA256
+          sed -i "s/sha256 ".*"/sha256 "${{ env.SHA256 }}"/" $CASK_FILE
+          
+          # Update URL
+          # Using | as delimiter to handle slashes in URL
+          sed -i "s|url ".*"|url "${{ env.DOWNLOAD_URL }}"|" $CASK_FILE
+          
+          # Check for changes
+          if git diff --quiet $CASK_FILE; then
+            echo "No changes detected in $CASK_FILE"
+          else
+            # Config git
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            
+            # Commit and push
+            git add $CASK_FILE
+            git commit -m "Update QuickNetStats to ${{ env.VERSION }}"
+            git push
+          fi
