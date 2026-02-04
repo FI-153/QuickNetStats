@@ -57,14 +57,14 @@ jobs:
           fi
           
           # Update Version
-          sed -i "s/version ".*"/version "${{ env.VERSION }}"/" $CASK_FILE
+          sed -i "s/version .*/version \"${{ env.VERSION }}\"/" $CASK_FILE
           
           # Update SHA256
-          sed -i "s/sha256 ".*"/sha256 "${{ env.SHA256 }}"/" $CASK_FILE
+          sed -i "s/sha256 .*/sha256 \"${{ env.SHA256 }}\"/" $CASK_FILE
           
           # Update URL
           # Using | as delimiter to handle slashes in URL
-          sed -i "s|url ".*"|url "${{ env.DOWNLOAD_URL }}"|" $CASK_FILE
+          sed -i "s|url .*|url \"${{ env.DOWNLOAD_URL }}\"|" $CASK_FILE
           
           # Check for changes
           if git diff --quiet $CASK_FILE; then
