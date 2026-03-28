@@ -174,6 +174,11 @@ Claude **must** use the `superpowers` skill set for structured development work:
 - **Code Review** (`superpowers:requesting-code-review`): Use when completing tasks or implementing major features to verify work meets requirements.
 - **Verification** (`superpowers:verification-before-completion`): Use when about to claim work is complete — run verification commands and confirm output before making success claims.
 
+## Specialized Skills
+
+- **SwiftUI Expert** (`swiftui-expert:swiftui-expert-skill`): Use when planning, writing, reviewing, or improving SwiftUI views. Must be invoked before creating new views or refactoring existing ones.
+- **Swift Testing Expert** (`swift-testing-expert:swift-testing-expert`): Use when writing, reviewing, or migrating tests. Must be invoked before creating new test files or modifying existing tests.
+
 ## Formatting and Project Structure
 
 See [`context/styling/formatting.md`](context/styling/formatting.md) for the rules to follow
