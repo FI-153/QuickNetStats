@@ -6,8 +6,28 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		F153BBBB000000000000000A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C08CADE92EBE978500A7B740 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C08CADF02EBE978500A7B740;
+			remoteInfo = QuickNetStats;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		C08CADF12EBE978500A7B740 /* QuickNetStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuickNetStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F153BBBB0000000000000001 /* QuickNetStatsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuickNetStatsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F1530001AAAA000000000001 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		F1530001AAAA000000000002 /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
+		F1530001AAAA000000000003 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
+		F1530001AAAA000000000004 /* CODE_OF_CONDUCT.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CODE_OF_CONDUCT.md; sourceTree = "<group>"; };
+		F1530001AAAA000000000005 /* CONTRIBUTING.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CONTRIBUTING.md; sourceTree = "<group>"; };
+		F1530001AAAA000000000006 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		F1530001AAAA000000000007 /* readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
+		F1530001AAAA000000000008 /* .github */ = {isa = PBXFileReference; lastKnownFileType = folder; path = .github; sourceTree = "<group>"; };
+		F1530001AAAA000000000009 /* context */ = {isa = PBXFileReference; lastKnownFileType = folder; path = context; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +36,22 @@
 			path = QuickNetStats;
 			sourceTree = "<group>";
 		};
+		F153BBBB0000000000000006 /* QuickNetStatsTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = QuickNetStatsTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		C08CADEE2EBE978500A7B740 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F153BBBB0000000000000004 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,7 +65,17 @@
 			isa = PBXGroup;
 			children = (
 				C08CADF32EBE978500A7B740 /* QuickNetStats */,
+				F153BBBB0000000000000006 /* QuickNetStatsTests */,
 				C08CADF22EBE978500A7B740 /* Products */,
+				F1530001AAAA000000000009 /* context */,
+				F1530001AAAA000000000008 /* .github */,
+				F1530001AAAA000000000001 /* .gitignore */,
+				F1530001AAAA000000000002 /* .swiftlint.yml */,
+				F1530001AAAA000000000003 /* CLAUDE.md */,
+				F1530001AAAA000000000004 /* CODE_OF_CONDUCT.md */,
+				F1530001AAAA000000000005 /* CONTRIBUTING.md */,
+				F1530001AAAA000000000006 /* LICENSE */,
+				F1530001AAAA000000000007 /* readme.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -41,6 +83,7 @@
 			isa = PBXGroup;
 			children = (
 				C08CADF12EBE978500A7B740 /* QuickNetStats.app */,
+				F153BBBB0000000000000001 /* QuickNetStatsTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -52,6 +95,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C08CADFC2EBE978600A7B740 /* Build configuration list for PBXNativeTarget "QuickNetStats" */;
 			buildPhases = (
+				F1530002AAAA000000000001 /* SwiftLint */,
 				C08CADED2EBE978500A7B740 /* Sources */,
 				C08CADEE2EBE978500A7B740 /* Frameworks */,
 				C08CADEF2EBE978500A7B740 /* Resources */,
@@ -70,6 +114,29 @@
 			productReference = C08CADF12EBE978500A7B740 /* QuickNetStats.app */;
 			productType = "com.apple.product-type.application";
 		};
+		F153BBBB0000000000000002 /* QuickNetStatsTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F153BBBB0000000000000009 /* Build configuration list for PBXNativeTarget "QuickNetStatsTests" */;
+			buildPhases = (
+				F153BBBB0000000000000003 /* Sources */,
+				F153BBBB0000000000000004 /* Frameworks */,
+				F153BBBB0000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F153BBBB000000000000000B /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F153BBBB0000000000000006 /* QuickNetStatsTests */,
+			);
+			name = QuickNetStatsTests;
+			packageProductDependencies = (
+			);
+			productName = QuickNetStatsTests;
+			productReference = F153BBBB0000000000000001 /* QuickNetStatsTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -82,6 +149,10 @@
 				TargetAttributes = {
 					C08CADF02EBE978500A7B740 = {
 						CreatedOnToolsVersion = 26.0.1;
+					};
+					F153BBBB0000000000000002 = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = C08CADF02EBE978500A7B740;
 					};
 				};
 			};
@@ -100,6 +171,7 @@
 			projectRoot = "";
 			targets = (
 				C08CADF02EBE978500A7B740 /* QuickNetStats */,
+				F153BBBB0000000000000002 /* QuickNetStatsTests */,
 			);
 		};
 /* End PBXProject section */
@@ -112,7 +184,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F153BBBB0000000000000005 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		F1530002AAAA000000000001 /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "export PATH=\"$PATH:/opt/homebrew/bin\"\nif which swiftlint > /dev/null; then\n  swiftlint lint\nelse\n  echo \"warning: SwiftLint not installed\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C08CADED2EBE978500A7B740 /* Sources */ = {
@@ -122,7 +219,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F153BBBB0000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F153BBBB000000000000000B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C08CADF02EBE978500A7B740 /* QuickNetStats */;
+			targetProxy = F153BBBB000000000000000A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		C08CADFA2EBE978600A7B740 /* Debug */ = {
@@ -164,7 +276,7 @@
 				DEVELOPMENT_TEAM = 7F47MKWBPJ;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -230,7 +342,7 @@
 				DEVELOPMENT_TEAM = 7F47MKWBPJ;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -351,6 +463,48 @@
 			};
 			name = Release;
 		};
+		F153BBBB0000000000000007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 7F47MKWBPJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.federicoimberti.quicknetstats.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/QuickNetStats.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/QuickNetStats";
+			};
+			name = Debug;
+		};
+		F153BBBB0000000000000008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 7F47MKWBPJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.federicoimberti.quicknetstats.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/QuickNetStats.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/QuickNetStats";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -368,6 +522,15 @@
 			buildConfigurations = (
 				C08CADFD2EBE978600A7B740 /* Debug */,
 				C08CADFE2EBE978600A7B740 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F153BBBB0000000000000009 /* Build configuration list for PBXNativeTarget "QuickNetStatsTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F153BBBB0000000000000007 /* Debug */,
+				F153BBBB0000000000000008 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

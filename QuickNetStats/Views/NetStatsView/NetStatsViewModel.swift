@@ -9,9 +9,9 @@ import SwiftUI
 
 class NetStatsViewModel {
     
-    var netStats:NetworkStats
-    var privateIP:String?
-    var publicIP:String?
+    var netStats: NetworkStats
+    var privateIP: String?
+    var publicIP: String?
     
     @Environment(\.colorScheme) var colorScheme
     
@@ -38,7 +38,7 @@ class NetStatsViewModel {
         }
     }
 
-    func copyToClipboard(_ str :String) {
+    func copyToClipboard(_ str: String) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(str, forType: .string)

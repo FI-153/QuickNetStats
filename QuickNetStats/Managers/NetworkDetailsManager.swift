@@ -15,7 +15,7 @@ class NetworkDetailsManager: ObservableObject {
     @Published var privateIP: String?
     
     /// The public IP of this machine.
-    @Published var publicIP:String?
+    @Published var publicIP: String?
         
     /// Populate the published attributes for public and private IP.
     func getAddresses() async {
@@ -27,11 +27,11 @@ class NetworkDetailsManager: ObservableObject {
     /// Use this to trigger UI updates every time the method is called
     func deleteAndGetAddresses() async {
         
-        //Delete the old values
+        // Delete the old values
         self.publicIP = nil
         self.privateIP = nil
         
-        //Compute new values
+        // Compute new values
         self.publicIP = await fetchPublicIpAddress()
         self.privateIP = getPrivateIPAddress()
     }

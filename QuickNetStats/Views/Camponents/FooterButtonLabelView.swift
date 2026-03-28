@@ -9,8 +9,8 @@ import SwiftUI
 
 struct FooterButtonLabelView: View {
     
-    let labelText:String
-    let systemName:String
+    let labelText: String
+    let systemName: String
     
     var body: some View {
         Label {

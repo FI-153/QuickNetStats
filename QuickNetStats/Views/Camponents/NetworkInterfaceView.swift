@@ -9,16 +9,16 @@ import SwiftUI
 
 struct NetworkInterfaceView: View {
     
-    let netIntervaceType:NetworkInterfaceType
-    let isAvailable:Bool
-    let linkQualityColor:Color
+    let netIntervaceType: NetworkInterfaceType
+    let isAvailable: Bool
+    let linkQualityColor: Color
     
-    @State var appear:Bool = true
+    @State var appear: Bool = true
     
-    @EnvironmentObject var settings:Settings
+    @EnvironmentObject var settings: Settings
         
     var symbolName: String {
-        switch (netIntervaceType) {
+        switch netIntervaceType {
         case .ethernet:
              return "cable.coaxial"
         case .wifi:
@@ -39,7 +39,7 @@ struct NetworkInterfaceView: View {
         }
     }
     
-    var imageSection:some View {
+    var imageSection: some View {
         
         Group {
             if isAvailable {

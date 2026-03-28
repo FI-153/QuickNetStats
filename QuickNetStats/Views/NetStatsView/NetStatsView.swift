@@ -11,11 +11,11 @@ import Network
 
 struct NetStatsView: View {
     
-    @EnvironmentObject var settings:Settings
+    @EnvironmentObject var settings: Settings
     
-    var vm:NetStatsViewModel
+    var vm: NetStatsViewModel
     
-    init(netStats:NetworkStats, privateIP:String?, publicIP:String?) {
+    init(netStats: NetworkStats, privateIP: String?, publicIP: String?) {
         self.vm = NetStatsViewModel(netStats: netStats, privateIP: privateIP, publicIP: publicIP)
     }
         
@@ -93,7 +93,7 @@ struct NetStatsView: View {
     }
 }
 
-//MARK - Previews
+// MARK: - Previews
 
 #Preview("Good Connection") {
     NetStatsView(
@@ -152,7 +152,7 @@ struct NetStatsView: View {
 
 #Preview("Constriied + Expansive") {
     NetStatsView(
-        netStats: NetworkStats.mockConstrainedAndExpansiveCellCoonection,
+        netStats: NetworkStats.mockConstrainedExpensiveCellConnection,
         privateIP: "10.0.0.32",
         publicIP: "100.10.30.2"
     )
@@ -160,7 +160,6 @@ struct NetStatsView: View {
     .frame(width: 550)
     .environmentObject(Settings())
 }
-
 
 #Preview("Disconnected") {
     NetStatsView(
@@ -224,7 +223,6 @@ struct NetStatsView: View {
         .padding()
         .frame(width: 550)
         .environmentObject(Settings())
-        
         
     }
 }

@@ -24,7 +24,7 @@ enum LinkQualityNotificationBehavior: Int, CaseIterable, Identifiable {
     var id: Int { rawValue }
 }
 
-class Settings:ObservableObject {
+class Settings: ObservableObject {
     
     enum UserDefaultsKeys {
         static let showSummaryInMenu = "showSummaryInMenu"

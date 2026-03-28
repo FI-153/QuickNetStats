@@ -9,8 +9,8 @@ import SwiftUI
 
 struct AddressView: View {
     
-    let title:String
-    let value:String
+    let title: String
+    let value: String
     
     var body: some View {
         

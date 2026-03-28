@@ -10,10 +10,10 @@ import Network
 
 struct LinkQualityView: View {
     
-    let linkQuality:LinkQuality
-    let linkQualityColor:Color
+    let linkQuality: LinkQuality
+    let linkQualityColor: Color
     
-    var linkQualityNumber:Int {
+    var linkQualityNumber: Int {
         switch linkQuality {
         case .minimal:
             return 1
@@ -26,7 +26,7 @@ struct LinkQualityView: View {
         }
     }
         
-    let circleDim:CGFloat = 25
+    let circleDim: CGFloat = 25
     
     var body: some View {
         VStack(spacing: 5){

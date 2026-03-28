@@ -9,7 +9,7 @@ import Foundation
 import Network
 import Combine
 
-class NetworkStatsManager:ObservableObject {
+class NetworkStatsManager: ObservableObject {
     
     private var monitor: NWPathMonitor
     
@@ -20,10 +20,10 @@ class NetworkStatsManager:ObservableObject {
     @Published var netStats: NetworkStats
     
     /// Track if the monitor is monitoring to avoid multiple monitoring sessions.
-    private var isMonitoring:Bool
+    private var isMonitoring: Bool
     
     /// Track if it is the first update to avoid sending notifications on launch
-    private var isFirstUpdate:Bool
+    private var isFirstUpdate: Bool
     
     init() {
         self.monitor = NWPathMonitor()

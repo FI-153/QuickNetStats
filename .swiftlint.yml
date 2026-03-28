@@ -1,0 +1,38 @@
+# SwiftLint configuration for QuickNetStats
+
+# Only lint project source files
+included:
+  - QuickNetStats
+
+# Rules disabled to match existing code style
+disabled_rules:
+  - trailing_whitespace       # 302 violations — auto-fix separately if desired
+  - opening_brace             # Project uses opening braces on the same line as control flow, but SwiftLint expects a space before `{` in some patterns
+  - no_space_in_method_call   # Minor style preference
+
+# Tune rules to fit the codebase
+line_length:
+  warning: 160
+  error: 250
+
+identifier_name:
+  min_length:
+    warning: 2
+    error: 1
+  excluded:
+    - id
+    - ip
+  allowed_symbols:
+    - _
+
+type_body_length:
+  warning: 400
+  error: 600
+
+file_length:
+  warning: 500
+  error: 800
+
+function_body_length:
+  warning: 60
+  error: 100

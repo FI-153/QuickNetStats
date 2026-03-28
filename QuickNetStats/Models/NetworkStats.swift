@@ -7,7 +7,6 @@
 
 import Foundation
 
-import Foundation
 import Network
 
 enum NetworkInterfaceType: String {
@@ -49,7 +48,7 @@ struct NetworkStats {
     let interfaceType: NetworkInterfaceType
     
     /// The technology underlying the connection (Allows to distinguish between wired and wireless cellular).
-    let connectionTechnology:NWInterface.InterfaceType
+    let connectionTechnology: NWInterface.InterfaceType
     
     /// True if the network is considered "expensive" (e.g., cellular data cap).
     let isExpensive: Bool
@@ -61,10 +60,10 @@ struct NetworkStats {
     let unsatisfiedReason: NWPath.UnsatisfiedReason?
     
     /// Returns the quality of the connection
-    var linkQuality:LinkQuality?
+    var linkQuality: LinkQuality?
     
     /// Describes as a string the network quality
-    var linkQualityDescription:String?
+    var linkQualityDescription: String?
     
     // MARK: - Computed Properties
     
@@ -73,7 +72,7 @@ struct NetworkStats {
     }
     
     /// Summarizes the state of the connection in a short sentence describing the current interface and network quality
-    var fullSummary:String {
+    var fullSummary: String {
         
         if interfaceType == .none {
             return shortSummary
@@ -93,7 +92,7 @@ struct NetworkStats {
     }
     
     /// Summarizes the state of the connection in a short sentence describing the current interface
-    var shortSummary:String {
+    var shortSummary: String {
         
         if interfaceType == .none {
             return "No Connection"
@@ -102,7 +101,6 @@ struct NetworkStats {
         return "\(interfaceType.rawValue.capitalized) Connection"
     }
 
-    
     // MARK: - Initializers
     
     /**
@@ -153,7 +151,6 @@ struct NetworkStats {
             self.interfaceType = .none
         }
         
-        
         if #available(macOS 26, *) {
             switch path.linkQuality {
             case .minimal:
@@ -179,8 +176,8 @@ struct NetworkStats {
                  isExpensive: Bool,
                  isConstrained: Bool,
                  reason: NWPath.UnsatisfiedReason?,
-                 linkQuality:LinkQuality,
-                 connectionTechnology:NWInterface.InterfaceType
+                 linkQuality: LinkQuality,
+                 connectionTechnology: NWInterface.InterfaceType
     ) {
         
         self.status = status
@@ -271,7 +268,7 @@ struct NetworkStats {
         )
     }
     
-    static var mockConstrainedAndExpansiveCellCoonection: NetworkStats {
+    static var mockConstrainedExpensiveCellConnection: NetworkStats {
         return NetworkStats(
             status: .satisfied,
             interfaceType: .cellular,
@@ -306,6 +303,5 @@ struct NetworkStats {
             connectionTechnology: .other
         )
     }
-
 
 }
