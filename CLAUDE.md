@@ -114,8 +114,12 @@ implementation checklists or checkboxes. The user will ask for implementation st
 after approving the plan. Do not add execution details, step numbering, or checkbox lists unless
 the user explicitly requests them.
 
-Once a plan is approved and the user asks for implementation steps, Claude must create an
-implementation checklist in the plan file. After implementation begins, Claude must follow the
+**Single file per task**: The design spec and the implementation plan must live in the **same file**
+in `context/planning/`. The design sections come first, followed by the implementation steps
+appended below. Do not create separate files for the design and the plan.
+
+Once a plan is approved and the user asks for implementation steps, Claude must append the
+implementation checklist to the same plan file. After implementation begins, Claude must follow the
 checklist in order, checking each box (`- [x]`) immediately upon completing the corresponding task.
 
 ### Plan file format

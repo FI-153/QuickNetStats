@@ -10,31 +10,31 @@ import Combine
 
 class NotificationsManager: ObservableObject {
     
-    private init(){
+    private init() {
         self.areNotificationsEnabled = false
-        self.cooldown = 0.2
-        self.previousNotifificationTime = Date.distantPast
-        self.notificationStack = []
         checkNotificationStatus()
     }
-    
+
     /// The shared instance of the NotificationsManager class
     static let shared = NotificationsManager()
-    
+
     /// It is set to true when the user authorizes notifications and they are allowed in the settings page. If they are disabled by the user in settings
     /// then this value becomes false (eg. user authorized the app to send notifications but later disabled them in settings --> false)
     @Published var areNotificationsEnabled: Bool
-    
+
     @Published var notificationAuthError: String?
-    
-    /// The cooldown time in seconds between two notificaitons
-    private var cooldown: Double
-    
-    /// The last time a notification was sent
-    private var previousNotifificationTime: Date
-    
-    /// A stack that collects all notifications requests
-    private var notificationStack: [Notification]
+
+    /// Duration in seconds to wait for the network state to settle before evaluating notifications
+    private let settleDelay: TimeInterval = 1.0
+
+    /// Snapshot of the network state when the first change in a settle window arrived
+    private var originalStats: NetworkStats?
+
+    /// Most recent network state received during the current settle window
+    private var latestStats: NetworkStats?
+
+    /// The pending settle timer; cancelled and restarted on each new event
+    private var settleTimer: DispatchWorkItem?
         
     /// Checks the current notification permission status from system settings
     func checkNotificationStatus() {
@@ -89,69 +89,84 @@ class NotificationsManager: ObservableObject {
         UserDefaults.standard.bool(forKey: Settings.UserDefaultsKeys.isNotificationActive)
     }
         
-    /// Queue notifications to be sent once every `cooldown` period
+    /// Queue a settle evaluation. On first change, snapshots the original state.
+    /// Each subsequent change restarts the timer. When the timer fires after
+    /// `settleDelay` seconds of quiet, compares original vs settled state.
     func checkForNotifications(oldStats: NetworkStats, newStats: NetworkStats) {
-        
         guard self.notificationsGloballyEnabled() else { return }
-        
-        // Internet onnection
-        if let new_notification = self.checkInternetStatusChanges(
-            wasConnected: oldStats.isConnected,
-            isConnected: newStats.isConnected,
-            newInterface: newStats.interfaceType,
-        ) {
-            notificationStack.append(new_notification)
+
+        // Snapshot original state on the first change in this settle window
+        if originalStats == nil {
+            originalStats = oldStats
         }
-        
-        // Interface
-        if let new_notification = self.checkInterfaceChanges(
-            wasConnected: oldStats.isConnected,
-            isConnected: newStats.isConnected,
-            oldInterface: oldStats.interfaceType,
-            newInterface: newStats.interfaceType
-        ) {
-            notificationStack.append(new_notification)
+        latestStats = newStats
+
+        // Cancel any pending timer and start a new one
+        settleTimer?.cancel()
+
+        let work = DispatchWorkItem { [weak self] in
+            self?.evaluateSettledState()
         }
-        
-        // Link quality
-        if let new_notification = self.checkLinkQualityChanges(
-            oldQuality: oldStats.linkQuality?.rawValue ?? 0,
-            newQuality: newStats.linkQuality?.rawValue ?? 0
-        ) {
-            notificationStack.append(new_notification)
-        }
-                
-        sendMostImportantNotificationOnStack()
+        settleTimer = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + settleDelay, execute: work)
     }
-    
-    /// Send the most important notification on the `notificationStack` if the `cooldown` period has passed.
-    /// If a notificaiton is sent, it then empties `notificationStack` and sets a new `previousNotifificationTime`
-    private func sendMostImportantNotificationOnStack() {
-        let now = Date()
-        let nextAllowedTime = self.previousNotifificationTime.addingTimeInterval(self.cooldown)
-        
-        if now >= nextAllowedTime {
-            if !notificationStack.isEmpty {
-                notificationStack.sort()
-                self.notify(notificationStack.removeFirst())
-                self.notificationStack = []
-                self.previousNotifificationTime = Date()
-            }
-        } else {
-            // If we are within the cooldown period and have pending notifications,
-            // schedule a check for when the cooldown expires.
-            if !notificationStack.isEmpty {
-                let delay = nextAllowedTime.timeIntervalSince(now)
-                DispatchQueue.main.asyncAfter(deadline: .now() + max(0, delay)) { [weak self] in
-                    self?.sendMostImportantNotificationOnStack()
-                }
-            }
+
+    /// Called when the settle timer fires. Compares original vs settled state
+    /// and sends at most one notification (the highest priority).
+    private func evaluateSettledState() {
+        guard let original = originalStats, let settled = latestStats else {
+            originalStats = nil
+            latestStats = nil
+            settleTimer = nil
+            return
+        }
+
+        // Reset settle window
+        originalStats = nil
+        latestStats = nil
+        settleTimer = nil
+
+        let defaults = UserDefaults.standard
+
+        // Evaluate all three categories
+        var candidates: [QuickNetStats.Notification] = []
+
+        if let internetNotification = checkInternetStatusChanges(
+            wasConnected: original.isConnected,
+            isConnected: settled.isConnected,
+            newInterface: settled.interfaceType,
+            defaults: defaults
+        ) {
+            candidates.append(internetNotification)
+        }
+
+        if let interfaceNotification = checkInterfaceChanges(
+            wasConnected: original.isConnected,
+            isConnected: settled.isConnected,
+            oldInterface: original.interfaceType,
+            newInterface: settled.interfaceType,
+            defaults: defaults
+        ) {
+            candidates.append(interfaceNotification)
+        }
+
+        if let qualityNotification = checkLinkQualityChanges(
+            oldQuality: original.linkQuality?.rawValue ?? 0,
+            newQuality: settled.linkQuality?.rawValue ?? 0,
+            defaults: defaults
+        ) {
+            candidates.append(qualityNotification)
+        }
+
+        // Send only the highest-priority notification (lowest priority number)
+        if let best = candidates.min(by: { $0.priority < $1.priority }) {
+            notify(best)
         }
     }
     
     /// Check internet status changes based on what the user configured on the settings.
     /// If the status has changes and the notification cooldown is over then send the notification
-    private func checkInternetStatusChanges(
+    func checkInternetStatusChanges(
         wasConnected: Bool,
         isConnected: Bool,
         newInterface: NetworkInterfaceType,
@@ -204,7 +219,7 @@ class NotificationsManager: ObservableObject {
     
     /// Check the link quality changes based on what the user configured on the settings
     /// If the status has changes and the notification cooldown is over then send the notification
-    private func checkLinkQualityChanges(
+    func checkLinkQualityChanges(
         oldQuality: Int,
         newQuality: Int,
         defaults: UserDefaults = UserDefaults.standard
@@ -250,7 +265,7 @@ class NotificationsManager: ObservableObject {
     
     /// Check if the interface changed and notiffies if the user toggled this notification
     /// If the status has changes and the notification cooldown is over then send the notification
-    private func checkInterfaceChanges(
+    func checkInterfaceChanges(
         wasConnected: Bool,
         isConnected: Bool,
         oldInterface: NetworkInterfaceType,

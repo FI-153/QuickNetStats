@@ -18,7 +18,6 @@
 
 /* Begin PBXFileReference section */
 		C08CADF12EBE978500A7B740 /* QuickNetStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuickNetStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		F153BBBB0000000000000001 /* QuickNetStatsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuickNetStatsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F1530001AAAA000000000001 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		F1530001AAAA000000000002 /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		F1530001AAAA000000000003 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
@@ -28,6 +27,7 @@
 		F1530001AAAA000000000007 /* readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
 		F1530001AAAA000000000008 /* .github */ = {isa = PBXFileReference; lastKnownFileType = folder; path = .github; sourceTree = "<group>"; };
 		F1530001AAAA000000000009 /* context */ = {isa = PBXFileReference; lastKnownFileType = folder; path = context; sourceTree = "<group>"; };
+		F153BBBB0000000000000001 /* QuickNetStatsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuickNetStatsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
