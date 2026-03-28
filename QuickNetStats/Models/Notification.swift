@@ -9,11 +9,11 @@ import Foundation
 
 class Notification: Identifiable, Comparable {
 
-    var id:UUID
-    var title:String
-    var body:String
-    var priority:Int
-    var created:Date
+    var id: UUID
+    var title: String
+    var body: String
+    var priority: Int
+    var created: Date
     
     init(title: String, body: String, priority: Int, created: Date) {
         self.id = UUID()

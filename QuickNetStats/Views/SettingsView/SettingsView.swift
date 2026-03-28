@@ -10,9 +10,9 @@ import SwiftUI
 struct SettingsView: View {
     
     @StateObject var vm: SettingsViewModel
-    @EnvironmentObject var settings:Settings
+    @EnvironmentObject var settings: Settings
     
-    @State private var selectedPage:SettingsViewModel.SettingsPage = .menubar
+    @State private var selectedPage: SettingsViewModel.SettingsPage = .menubar
     
     init() {
         _vm = .init(wrappedValue: SettingsViewModel())
@@ -65,7 +65,7 @@ struct SettingsView: View {
         
     }
     
-    fileprivate func settingsListItem(_ page:SettingsViewModel.SettingsPage) -> some View {
+    fileprivate func settingsListItem(_ page: SettingsViewModel.SettingsPage) -> some View {
         HStack (alignment: .center) {
             Image(systemName: page.icon)
                 .font(.title2)

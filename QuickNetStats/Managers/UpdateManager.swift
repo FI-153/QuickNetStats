@@ -19,7 +19,7 @@ struct GitHubRelease: Decodable {
 }
 
 @MainActor
-class UpdateManager:ObservableObject {
+class UpdateManager: ObservableObject {
     @Published var isUpdateAvailable: Bool = false
     @Published var latestVersion: String?
     @Published var errorMessage: String?
@@ -29,7 +29,7 @@ class UpdateManager:ObservableObject {
     private let repo = "QuickNetStats"
     private let cooldownTime = 2.0
     
-    private var lastCheck:Date = Date.distantPast
+    private var lastCheck: Date = Date.distantPast
     
     private var currentVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
@@ -77,10 +77,9 @@ class UpdateManager:ObservableObject {
             let (data, _) = try await URLSession.shared.data(for: request)
             let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
             
-            let remoteVersion = release.tagName.replacingOccurrences(of: "[vV]", with: "", options:.regularExpression)
+            let remoteVersion = release.tagName.replacingOccurrences(of: "[vV]", with: "", options: .regularExpression)
             self.latestVersion = remoteVersion
             self.isUpdateAvailable = isVersion(remoteVersion, newerThan: currentVersion)
-            
             
         } catch {
             print("Update check failed: \(error.localizedDescription)")

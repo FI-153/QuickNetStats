@@ -9,10 +9,10 @@ import SwiftUI
 
 struct ContentView: View {
     
-    @ObservedObject var netStatsManager:NetworkStatsManager
-    @ObservedObject var netDetailsManager:NetworkDetailsManager
+    @ObservedObject var netStatsManager: NetworkStatsManager
+    @ObservedObject var netDetailsManager: NetworkDetailsManager
     
-    @EnvironmentObject var settings:Settings
+    @EnvironmentObject var settings: Settings
     
     @Environment(\.openWindow) var openWindow
     

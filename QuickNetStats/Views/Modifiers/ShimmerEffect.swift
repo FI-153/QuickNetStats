@@ -9,9 +9,9 @@ import SwiftUI
 
 struct ShimmerEffect: ViewModifier {
     @State private var startAnimation = false
-    var direction:ShimmeringDirections
-    var offset:CGFloat = 100
-    var duration:CGFloat = 2.5
+    var direction: ShimmeringDirections
+    var offset: CGFloat = 100
+    var duration: CGFloat = 2.5
     
     enum ShimmeringDirections {
         case vertical, horizontal

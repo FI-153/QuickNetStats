@@ -9,7 +9,7 @@ import SwiftUI
 
 struct VisualsView: View {
     
-    @ObservedObject var settings:Settings
+    @ObservedObject var settings: Settings
     
     var body: some View {
         Form {

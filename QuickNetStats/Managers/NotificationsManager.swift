@@ -23,21 +23,21 @@ class NotificationsManager: ObservableObject {
     
     /// It is set to true when the user authorizes notifications and they are allowed in the settings page. If they are disabled by the user in settings
     /// then this value becomes false (eg. user authorized the app to send notifications but later disabled them in settings --> false)
-    @Published var areNotificationsEnabled:Bool
+    @Published var areNotificationsEnabled: Bool
     
-    @Published var notificationAuthError:String?
+    @Published var notificationAuthError: String?
     
     /// The cooldown time in seconds between two notificaitons
-    private var cooldown:Double
+    private var cooldown: Double
     
     /// The last time a notification was sent
-    private var previousNotifificationTime:Date
+    private var previousNotifificationTime: Date
     
     /// A stack that collects all notifications requests
-    private var notificationStack:[Notification]
+    private var notificationStack: [Notification]
         
     /// Checks the current notification permission status from system settings
-    func checkNotificationStatus() -> Void {
+    func checkNotificationStatus() {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             DispatchQueue.main.async {
                 self.areNotificationsEnabled = (settings.authorizationStatus == .authorized)
@@ -61,17 +61,17 @@ class NotificationsManager: ObservableObject {
     }
     
     /// Send a notification
-    func notify(titled title:String, _ body :String) {
+    func notify(titled title: String, _ body: String) {
         scheduleNotification(titled: title, body)
     }
     
     /// Send a notification
-    func notify(_ notification:Notification) {
+    func notify(_ notification: Notification) {
         scheduleNotification(titled: notification.title, notification.body)
     }
     
     /// Schedule a notification to be sent immediatelly
-    private func scheduleNotification(titled title:String, _ body :String) {
+    private func scheduleNotification(titled title: String, _ body: String) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -152,10 +152,10 @@ class NotificationsManager: ObservableObject {
     /// Check internet status changes based on what the user configured on the settings.
     /// If the status has changes and the notification cooldown is over then send the notification
     private func checkInternetStatusChanges(
-        wasConnected:Bool,
-        isConnected:Bool,
-        newInterface:NetworkInterfaceType,
-        defaults:UserDefaults = UserDefaults.standard
+        wasConnected: Bool,
+        isConnected: Bool,
+        newInterface: NetworkInterfaceType,
+        defaults: UserDefaults = UserDefaults.standard
     ) -> InternetStatusNotification? {
         let internetNotificationsBehavior = InternetNotificationBehavior(
             rawValue: defaults.integer(forKey: Settings.UserDefaultsKeys.notifyInternetBehavior)
@@ -205,9 +205,9 @@ class NotificationsManager: ObservableObject {
     /// Check the link quality changes based on what the user configured on the settings
     /// If the status has changes and the notification cooldown is over then send the notification
     private func checkLinkQualityChanges(
-        oldQuality:Int,
-        newQuality:Int,
-        defaults:UserDefaults = UserDefaults.standard
+        oldQuality: Int,
+        newQuality: Int,
+        defaults: UserDefaults = UserDefaults.standard
     ) -> LinkQualityStatusNotification? {
         let liknQualityNotificationsBehavior = LinkQualityNotificationBehavior(
             rawValue: defaults
@@ -251,11 +251,11 @@ class NotificationsManager: ObservableObject {
     /// Check if the interface changed and notiffies if the user toggled this notification
     /// If the status has changes and the notification cooldown is over then send the notification
     private func checkInterfaceChanges(
-        wasConnected:Bool,
-        isConnected:Bool,
-        oldInterface:NetworkInterfaceType,
-        newInterface:NetworkInterfaceType,
-        defaults:UserDefaults = UserDefaults.standard
+        wasConnected: Bool,
+        isConnected: Bool,
+        oldInterface: NetworkInterfaceType,
+        newInterface: NetworkInterfaceType,
+        defaults: UserDefaults = UserDefaults.standard
     ) -> InterfaceChangesStatusNotification? {
         if defaults.bool(forKey: Settings.UserDefaultsKeys.notifyInterfaceChanges) {
             if wasConnected && isConnected && oldInterface != newInterface {

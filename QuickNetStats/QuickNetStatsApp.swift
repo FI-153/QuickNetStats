@@ -11,9 +11,9 @@ import UserNotifications
 @main
 struct QuickNetStatsApp: App {
     
-    @StateObject var netStatsManager:NetworkStatsManager = NetworkStatsManager()
-    @StateObject var netDetailsManager:NetworkDetailsManager = NetworkDetailsManager()
-    @StateObject var settings:Settings = Settings()
+    @StateObject var netStatsManager: NetworkStatsManager = NetworkStatsManager()
+    @StateObject var netDetailsManager: NetworkDetailsManager = NetworkDetailsManager()
+    @StateObject var settings: Settings = Settings()
     
     let notificationDelegate = NotificationDelegate()
     

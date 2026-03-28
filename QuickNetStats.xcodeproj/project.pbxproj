@@ -8,6 +8,14 @@
 
 /* Begin PBXFileReference section */
 		C08CADF12EBE978500A7B740 /* QuickNetStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuickNetStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F1530001AAAA000000000001 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		F1530001AAAA000000000002 /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
+		F1530001AAAA000000000003 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
+		F1530001AAAA000000000004 /* CODE_OF_CONDUCT.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CODE_OF_CONDUCT.md; sourceTree = "<group>"; };
+		F1530001AAAA000000000005 /* CONTRIBUTING.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CONTRIBUTING.md; sourceTree = "<group>"; };
+		F1530001AAAA000000000006 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		F1530001AAAA000000000007 /* readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
+		F1530001AAAA000000000008 /* .github */ = {isa = PBXFileReference; lastKnownFileType = folder; path = .github; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -34,6 +42,14 @@
 			children = (
 				C08CADF32EBE978500A7B740 /* QuickNetStats */,
 				C08CADF22EBE978500A7B740 /* Products */,
+				F1530001AAAA000000000008 /* .github */,
+				F1530001AAAA000000000001 /* .gitignore */,
+				F1530001AAAA000000000002 /* .swiftlint.yml */,
+				F1530001AAAA000000000003 /* CLAUDE.md */,
+				F1530001AAAA000000000004 /* CODE_OF_CONDUCT.md */,
+				F1530001AAAA000000000005 /* CONTRIBUTING.md */,
+				F1530001AAAA000000000006 /* LICENSE */,
+				F1530001AAAA000000000007 /* readme.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -52,6 +68,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C08CADFC2EBE978600A7B740 /* Build configuration list for PBXNativeTarget "QuickNetStats" */;
 			buildPhases = (
+				F1530002AAAA000000000001 /* SwiftLint */,
 				C08CADED2EBE978500A7B740 /* Sources */,
 				C08CADEE2EBE978500A7B740 /* Frameworks */,
 				C08CADEF2EBE978500A7B740 /* Resources */,
@@ -114,6 +131,24 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		F1530002AAAA000000000001 /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "export PATH=\"$PATH:/opt/homebrew/bin\"\nif which swiftlint > /dev/null; then\n  swiftlint lint\nelse\n  echo \"warning: SwiftLint not installed\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		C08CADED2EBE978500A7B740 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -164,7 +199,7 @@
 				DEVELOPMENT_TEAM = 7F47MKWBPJ;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -230,7 +265,7 @@
 				DEVELOPMENT_TEAM = 7F47MKWBPJ;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;

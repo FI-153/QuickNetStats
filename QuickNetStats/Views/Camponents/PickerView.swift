@@ -60,7 +60,6 @@ struct PickerView<SelectionValue: Hashable, Content: View>: View {
             .padding()
         }
 
-        
         Form {
             PickerView(
                 title: "Notify when the internet",

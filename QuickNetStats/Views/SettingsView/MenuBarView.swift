@@ -9,7 +9,7 @@ import SwiftUI
 
 struct MenuBarView: View {
     
-    @ObservedObject var settings:Settings
+    @ObservedObject var settings: Settings
     @StateObject private var launchManager = LaunchAtLoginManager()
     
     var body: some View {

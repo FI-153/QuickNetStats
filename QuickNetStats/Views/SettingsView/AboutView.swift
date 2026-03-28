@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AboutView: View {
     
-    @ObservedObject var settings:Settings
+    @ObservedObject var settings: Settings
     @ObservedObject var updateManager = UpdateManager.shared
             
     var body: some View {
@@ -85,7 +85,7 @@ struct AboutView: View {
     
     fileprivate func footerSection() -> some View {
         VStack {
-            Link(destination: URL(string:"https://github.com/FI-153/QuickNetStats")!) {
+            Link(destination: URL(string: "https://github.com/FI-153/QuickNetStats")!) {
                 Image("github")
                     .resizable()
                     .scaledToFit()
