@@ -158,14 +158,13 @@ class NotificationsManager: ObservableObject {
             candidates.append(qualityNotification)
         }
 
-        // Send only the highest-priority notification (lowest priority number)
-        if let best = candidates.min(by: { $0.priority < $1.priority }) {
+        // Send only the highest-priority notification (Notification conforms to Comparable)
+        if let best = candidates.min() {
             notify(best)
         }
     }
     
-    /// Check internet status changes based on what the user configured on the settings.
-    /// If the status has changes and the notification cooldown is over then send the notification
+    /// Check internet status changes based on what the user configured in settings
     func checkInternetStatusChanges(
         wasConnected: Bool,
         isConnected: Bool,
@@ -217,14 +216,13 @@ class NotificationsManager: ObservableObject {
         return nil
     }
     
-    /// Check the link quality changes based on what the user configured on the settings
-    /// If the status has changes and the notification cooldown is over then send the notification
+    /// Check link quality changes based on what the user configured in settings
     func checkLinkQualityChanges(
         oldQuality: Int,
         newQuality: Int,
         defaults: UserDefaults = UserDefaults.standard
     ) -> LinkQualityStatusNotification? {
-        let liknQualityNotificationsBehavior = LinkQualityNotificationBehavior(
+        let linkQualityNotificationsBehavior = LinkQualityNotificationBehavior(
             rawValue: defaults
                 .integer(
                     forKey: Settings.UserDefaultsKeys.notifyQualityBehavior
@@ -235,7 +233,7 @@ class NotificationsManager: ObservableObject {
             var shouldNotify = false
             var title = ""
             
-            switch liknQualityNotificationsBehavior {
+            switch linkQualityNotificationsBehavior {
             case .improves:
                 if newQuality > oldQuality {
                     shouldNotify = true
@@ -263,8 +261,7 @@ class NotificationsManager: ObservableObject {
         return nil
     }
     
-    /// Check if the interface changed and notiffies if the user toggled this notification
-    /// If the status has changes and the notification cooldown is over then send the notification
+    /// Check if the interface changed and notify if the user enabled this notification
     func checkInterfaceChanges(
         wasConnected: Bool,
         isConnected: Bool,

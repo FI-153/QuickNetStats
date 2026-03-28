@@ -202,8 +202,8 @@ struct NotificationsManagerSettleTests {
         manager.checkForNotifications(oldStats: connected, newStats: disconnected)
         manager.checkForNotifications(oldStats: disconnected, newStats: connected)
 
-        // Give settle timer time to fire
-        try? await Task.sleep(for: .seconds(4))
+        // Give settle timer time to fire (settleDelay is 1s + margin)
+        try? await Task.sleep(for: .seconds(2))
 
         // After settle, the internal state should be reset
         // The fact that original (connected) == settled (connected) means no notification
