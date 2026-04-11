@@ -91,6 +91,38 @@ Three root-level `@StateObject`s are created in the app struct: `NetworkStatsMan
 - **Bundle IDs**: `com.federicoimberti.quicknetstats.dev` (debug) / `com.federicoimberti.quicknetstats` (release)
 - **Static mockups**: `NetworkStats` has static mock properties (e.g., `mockGoodWifiCoonection`) used for SwiftUI previews
 
+## Releasing
+
+### Release script
+
+`./scripts/release.sh <tag>` handles the full release pipeline: archive, export, zip, notarize, staple, tag, push, and GitHub release creation.
+
+```bash
+# Beta release
+./scripts/release.sh V.2.2.0-Beta-2
+
+# Stable release
+./scripts/release.sh V.2.2.0
+```
+
+Tags containing `beta` or `Beta` are automatically marked as GitHub pre-releases.
+
+### Prerequisites
+
+- **GitHub CLI**: `brew install gh` (authenticated via `gh auth login`)
+- **Apple Developer ID Application certificate** installed in Keychain
+- **Notarization credentials** stored in the keychain:
+  ```bash
+  xcrun notarytool store-credentials quicknetstats-notary
+  ```
+  This prompts for Apple ID, an app-specific password (generate at [appleid.apple.com](https://appleid.apple.com/account/manage) under Sign-In and Security > App-Specific Passwords), and Team ID (`7F47MKWBPJ`).
+- Working tree must be **clean** (no uncommitted changes)
+
+### Tag naming convention
+
+- **Stable**: `V.2.2.0`
+- **Beta**: `V.2.2.0-Beta-1`
+
 ## CI/CD
 
 GitHub Actions workflow (`.github/workflows/release.yml`) triggers on release publication to update the Homebrew tap at `FI-153/homebrew-tap`. It detects beta vs stable releases from the tag name and updates the appropriate cask file.
