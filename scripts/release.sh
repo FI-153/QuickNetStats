@@ -59,6 +59,7 @@ xcodebuild archive \
     CODE_SIGN_STYLE=Manual \
     CODE_SIGN_IDENTITY="Developer ID Application" \
     DEVELOPMENT_TEAM=7F47MKWBPJ \
+    PROVISIONING_PROFILE_SPECIFIER="Mac Team Direct Provisioning Profile: com.federicoimberti.quicknetstats" \
     -quiet
 
 [ -d "$ARCHIVE_PATH" ] || die "Archive failed — $ARCHIVE_PATH not found"
