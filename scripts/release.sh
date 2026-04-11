@@ -56,6 +56,7 @@ xcodebuild archive \
     -scheme "$SCHEME" \
     -configuration Release \
     -archivePath "$ARCHIVE_PATH" \
+    CODE_SIGN_STYLE=Manual \
     CODE_SIGN_IDENTITY="Developer ID Application" \
     DEVELOPMENT_TEAM=7F47MKWBPJ \
     -quiet
