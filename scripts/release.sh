@@ -56,8 +56,6 @@ xcodebuild archive \
     -scheme "$SCHEME" \
     -configuration Release \
     -archivePath "$ARCHIVE_PATH" \
-    CODE_SIGN_IDENTITY="Developer ID Application" \
-    DEVELOPMENT_TEAM=7F47MKWBPJ \
     -quiet
 
 [ -d "$ARCHIVE_PATH" ] || die "Archive failed — $ARCHIVE_PATH not found"
@@ -75,25 +73,25 @@ APP_PATH="$EXPORT_DIR/$APP_NAME.app"
 [ -d "$APP_PATH" ] || die "Export failed — $APP_PATH not found"
 green "App exported"
 
-# ─── Step 3: Notarize ───────────────────────────────────────────────────────
-info "Submitting for notarization (this may take a few minutes)..."
-xcrun notarytool submit "$APP_PATH" \
-    --keychain-profile "$NOTARY_PROFILE" \
-    --wait
-
-green "Notarization complete"
-
-# ─── Step 4: Staple ─────────────────────────────────────────────────────────
-info "Stapling notarization ticket..."
-xcrun stapler staple "$APP_PATH"
-green "Stapled"
-
-# ─── Step 5: Zip ────────────────────────────────────────────────────────────
+# ─── Step 3: Zip ────────────────────────────────────────────────────────────
 info "Creating zip..."
 cd "$EXPORT_DIR"
 zip -r -q "$PROJECT_DIR/$ZIP_NAME" "$APP_NAME.app"
 cd "$PROJECT_DIR"
 green "Created $ZIP_NAME"
+
+# ─── Step 4: Notarize ───────────────────────────────────────────────────────
+info "Submitting for notarization (this may take a few minutes)..."
+xcrun notarytool submit "$ZIP_NAME" \
+    --keychain-profile "$NOTARY_PROFILE" \
+    --wait
+
+green "Notarization complete"
+
+# ─── Step 5: Staple ─────────────────────────────────────────────────────────
+info "Stapling notarization ticket..."
+xcrun stapler staple "$APP_PATH"
+green "Stapled"
 
 # ─── Step 6: Tag & Push ─────────────────────────────────────────────────────
 info "Tagging $TAG and pushing..."
