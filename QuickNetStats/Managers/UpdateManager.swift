@@ -34,9 +34,14 @@ class UpdateManager: ObservableObject {
     private var currentVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
     }
-    
-    private init() {}
-    
+
+    /// The URLSession used for network requests (injectable for testing).
+    private let session: URLSession
+
+    init(session: URLSession = .shared) {
+        self.session = session
+    }
+
     /// Shared instance of the singleton UpdateManager class
     static let shared = UpdateManager()
     
@@ -69,39 +74,43 @@ class UpdateManager: ObservableObject {
         
         var request = URLRequest(url: url)
         request.setValue("QuickNetStatsApp", forHTTPHeaderField: "User-Agent")
-        
+
+        self.isLoading = true
+        self.errorMessage = nil
+        defer {
+            self.lastCheck = Date()
+            self.isLoading = false
+        }
+
         do {
-            self.isLoading = true
-            self.errorMessage = nil
-            
-            let (data, _) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await session.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                self.errorMessage = "GitHub responded with an unexpected status code"
+                return
+            }
+
             let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
-            
-            let remoteVersion = release.tagName.replacingOccurrences(of: "[vV]", with: "", options: .regularExpression)
+
+            let remoteVersion = Self.cleanVersion(fromTag: release.tagName)
             self.latestVersion = remoteVersion
             self.isUpdateAvailable = isVersion(remoteVersion, newerThan: currentVersion)
-            
+
         } catch {
             print("Update check failed: \(error.localizedDescription)")
             self.errorMessage = error.localizedDescription
         }
-        
-        self.lastCheck = Date()
-        self.isLoading = false
     }
-    
+
+    /// Strips a leading "v"/"V" and optional dot from a release tag (e.g. "V.2.3.0" -> "2.3.0").
+    static func cleanVersion(fromTag tag: String) -> String {
+        tag.replacingOccurrences(of: "^[vV]\\.?", with: "", options: .regularExpression)
+    }
+
     /// Simple semantic version comparison
     /// - Returns True if the current version is not the latest one
-    private func isVersion(_ remote: String, newerThan local: String) -> Bool {
+    func isVersion(_ remote: String, newerThan local: String) -> Bool {
         return remote.compare(local, options: .numeric) == .orderedDescending
     }
-}
-
-import Playgrounds
-#Playground {
-    var um = UpdateManager.shared
-    let currentVersion = um.getCurrentVersion()
-//    await um.checkForUpdates()
-//    um.latestVersion
-//    um.isUpdateAvailable
 }

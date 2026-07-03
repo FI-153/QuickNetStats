@@ -25,6 +25,7 @@ cleanup() {
     rm -rf "$PROJECT_DIR/build"
     rm -f "$PROJECT_DIR/$ZIP_NAME"
 }
+trap cleanup EXIT
 
 die() { red "Error: $*" >&2; exit 1; }
 
@@ -93,6 +94,14 @@ info "Stapling notarization ticket..."
 xcrun stapler staple "$APP_PATH"
 green "Stapled"
 
+# ─── Step 5b: Re-zip stapled app ────────────────────────────────────────────
+info "Re-creating zip with stapled app..."
+rm -f "$PROJECT_DIR/$ZIP_NAME"
+cd "$EXPORT_DIR"
+zip -r -q "$PROJECT_DIR/$ZIP_NAME" "$APP_NAME.app"
+cd "$PROJECT_DIR"
+green "Zip updated with stapled app"
+
 # ─── Step 6: Tag & Push ─────────────────────────────────────────────────────
 info "Tagging $TAG and pushing..."
 git tag "$TAG"
@@ -118,5 +127,5 @@ gh release create "$TAG" "$ZIP_NAME" \
 green "Release created: $TAG"
 
 # ─── Step 8: Cleanup ────────────────────────────────────────────────────────
-cleanup
+# cleanup runs automatically via `trap cleanup EXIT`
 green "Done! Release $TAG is live."

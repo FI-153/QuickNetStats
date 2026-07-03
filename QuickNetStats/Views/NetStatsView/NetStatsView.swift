@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  NetStatsView.swift
 //  QuickNetStats
 //
 //  Created by Federico Imberti on 2025-11-07.
@@ -12,27 +12,33 @@ import Network
 struct NetStatsView: View {
     
     @EnvironmentObject var settings: Settings
-    
+    @Environment(\.colorScheme) private var colorScheme
+
     var vm: NetStatsViewModel
-    
+
     init(netStats: NetworkStats, privateIP: String?, publicIP: String?) {
         self.vm = NetStatsViewModel(netStats: netStats, privateIP: privateIP, publicIP: publicIP)
     }
-        
+
+    /// Icon tint used when colorful mode is off: readable in both appearances.
+    private var monochromeColor: Color {
+        colorScheme == .dark ? .secondary : .black
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             HStack (alignment: .center, spacing: 40){
                 NetworkInterfaceView(
-                    netIntervaceType: vm.netStats.interfaceType,
+                    netInterfaceType: vm.netStats.interfaceType,
                     isAvailable: vm.netStats.isConnected,
-                    linkQualityColor: settings.isColorful ? vm.linkQualityColor : vm.isDarkModeEnabled ? .secondary : .black
+                    linkQualityColor: settings.isColorful ? vm.linkQualityColor : monochromeColor
                 )
                 .frame(height: 80)
-                
+
                 if let linkQuality = vm.netStats.linkQuality {
                     LinkQualityView(
                         linkQuality: linkQuality,
-                        linkQualityColor: settings.isColorful ? vm.linkQualityColor : vm.isDarkModeEnabled ? .secondary : .black
+                        linkQualityColor: settings.isColorful ? vm.linkQualityColor : monochromeColor
                     )
                 }
             }
@@ -97,7 +103,7 @@ struct NetStatsView: View {
 
 #Preview("Good Connection") {
     NetStatsView(
-        netStats: NetworkStats.mockGoodWifiCoonection,
+        netStats: NetworkStats.mockGoodWifiConnection,
         privateIP: "10.0.0.32",
         publicIP: "100.10.30.2"
     )
@@ -108,7 +114,7 @@ struct NetStatsView: View {
 
 #Preview("Moderate Connection") {
     NetStatsView(
-        netStats: NetworkStats.mockModerateWifiCoonection,
+        netStats: NetworkStats.mockModerateWifiConnection,
         privateIP: "10.0.0.32",
         publicIP: "100.10.30.2"
     )
@@ -119,7 +125,7 @@ struct NetStatsView: View {
 
 #Preview("Bad Connection") {
     NetStatsView(
-        netStats: NetworkStats.mockBadWifiCoonection,
+        netStats: NetworkStats.mockBadWifiConnection,
         privateIP: "10.0.0.32",
         publicIP: "100.10.30.2"
     )
@@ -130,7 +136,7 @@ struct NetStatsView: View {
 
 #Preview("Good Eth Connection") {
     NetStatsView(
-        netStats: NetworkStats.mockGoodEthCoonection,
+        netStats: NetworkStats.mockGoodEthConnection,
         privateIP: "10.0.0.32",
         publicIP: "100.10.30.2"
     )
@@ -141,7 +147,7 @@ struct NetStatsView: View {
 
 #Preview("Constrained") {
     NetStatsView(
-        netStats: NetworkStats.mockConstrainedWifiCoonection,
+        netStats: NetworkStats.mockConstrainedWifiConnection,
         privateIP: "10.0.0.32",
         publicIP: "100.10.30.2"
     )
@@ -150,7 +156,7 @@ struct NetStatsView: View {
     .environmentObject(Settings())
 }
 
-#Preview("Constriied + Expansive") {
+#Preview("Constriied + Expensive") {
     NetStatsView(
         netStats: NetworkStats.mockConstrainedExpensiveCellConnection,
         privateIP: "10.0.0.32",
@@ -175,7 +181,7 @@ struct NetStatsView: View {
 #Preview("QuickNetStats") {
     VStack {
         NetStatsView(
-            netStats: NetworkStats.mockGoodWifiCoonection,
+            netStats: NetworkStats.mockGoodWifiConnection,
             privateIP: "10.0.0.32",
             publicIP: "100.10.30.2"
         )
@@ -184,7 +190,7 @@ struct NetStatsView: View {
         .environmentObject(Settings())
         
         NetStatsView(
-            netStats: NetworkStats.mockModerateWifiCoonection,
+            netStats: NetworkStats.mockModerateWifiConnection,
             privateIP: "10.0.0.32",
             publicIP: "100.10.30.2"
         )
@@ -193,7 +199,7 @@ struct NetStatsView: View {
         .environmentObject(Settings())
         
         NetStatsView(
-            netStats: NetworkStats.mockBadWifiCoonection,
+            netStats: NetworkStats.mockBadWifiConnection,
             privateIP: "10.0.0.32",
             publicIP: "100.10.30.2"
         )
@@ -204,10 +210,10 @@ struct NetStatsView: View {
     }
 }
 
-#Preview("Constrained or Expansive Connections") {
+#Preview("Constrained or Expensive Connections") {
     HStack(spacing: 100) {
         NetStatsView(
-            netStats: NetworkStats.mockConstrainedWifiCoonection,
+            netStats: NetworkStats.mockConstrainedWifiConnection,
             privateIP: "10.0.0.32",
             publicIP: "100.10.30.2"
         )
@@ -216,7 +222,7 @@ struct NetStatsView: View {
         .environmentObject(Settings())
         
         NetStatsView(
-            netStats: NetworkStats.mockExpansiveCellCoonection,
+            netStats: NetworkStats.mockExpensiveCellConnection,
             privateIP: "10.0.0.32",
             publicIP: "100.10.30.2"
         )

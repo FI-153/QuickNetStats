@@ -9,7 +9,7 @@ import SwiftUI
 
 struct NetworkInterfaceView: View {
     
-    let netIntervaceType: NetworkInterfaceType
+    let netInterfaceType: NetworkInterfaceType
     let isAvailable: Bool
     let linkQualityColor: Color
     
@@ -18,7 +18,7 @@ struct NetworkInterfaceView: View {
     @EnvironmentObject var settings: Settings
         
     var symbolName: String {
-        switch netIntervaceType {
+        switch netInterfaceType {
         case .ethernet:
              return "cable.coaxial"
         case .wifi:
@@ -66,36 +66,36 @@ struct NetworkInterfaceView: View {
     VStack (spacing: 100){
         HStack (spacing: 100){
             HStack(spacing: 30) {
-                NetworkInterfaceView(netIntervaceType: .wifi, isAvailable: true, linkQualityColor: .green)
+                NetworkInterfaceView(netInterfaceType: .wifi, isAvailable: true, linkQualityColor: .green)
                     .frame(height: 80)
                 
-                NetworkInterfaceView(netIntervaceType: .wifi, isAvailable: false, linkQualityColor: .secondary)
+                NetworkInterfaceView(netInterfaceType: .wifi, isAvailable: false, linkQualityColor: .secondary)
                     .frame(height: 80)
                 
             }
             HStack(spacing: 30) {
-                NetworkInterfaceView(netIntervaceType: .ethernet, isAvailable: true, linkQualityColor: .green)
+                NetworkInterfaceView(netInterfaceType: .ethernet, isAvailable: true, linkQualityColor: .green)
                     .frame(height: 80)
                 
-                NetworkInterfaceView(netIntervaceType: .ethernet, isAvailable: false, linkQualityColor: .secondary)
+                NetworkInterfaceView(netInterfaceType: .ethernet, isAvailable: false, linkQualityColor: .secondary)
                     .frame(height: 80)
                 
             }
         }
         HStack (spacing: 100){
             HStack(spacing: 30) {
-                NetworkInterfaceView(netIntervaceType: .cellular, isAvailable: true, linkQualityColor: .green)
+                NetworkInterfaceView(netInterfaceType: .cellular, isAvailable: true, linkQualityColor: .green)
                     .frame(height: 80)
                 
-                NetworkInterfaceView(netIntervaceType: .cellular, isAvailable: false, linkQualityColor: .secondary)
+                NetworkInterfaceView(netInterfaceType: .cellular, isAvailable: false, linkQualityColor: .secondary)
                     .frame(height: 80)
                 
             }
             HStack(spacing: 30) {
-                NetworkInterfaceView(netIntervaceType: .other, isAvailable: true, linkQualityColor: .green)
+                NetworkInterfaceView(netInterfaceType: .other, isAvailable: true, linkQualityColor: .green)
                     .frame(height: 80)
                 
-                NetworkInterfaceView(netIntervaceType: .other, isAvailable: false, linkQualityColor: .secondary)
+                NetworkInterfaceView(netInterfaceType: .other, isAvailable: false, linkQualityColor: .secondary)
                     .frame(height: 80)
             }
         }

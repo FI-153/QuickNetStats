@@ -15,7 +15,7 @@ struct NetworkStatsTests {
 
     @Test("isConnected returns true when status is satisfied")
     func connectedWhenSatisfied() {
-        let stats = NetworkStats.mockGoodWifiCoonection
+        let stats = NetworkStats.mockGoodWifiConnection
         #expect(stats.isConnected)
     }
 
@@ -36,9 +36,9 @@ struct NetworkStatsTests {
     @Test(
         "shortSummary shows interface type for connected stats",
         arguments: [
-            (NetworkStats.mockGoodWifiCoonection, "Wifi Connection"),
-            (NetworkStats.mockGoodEthCoonection, "Ethernet Connection"),
-            (NetworkStats.mockExpansiveCellCoonection, "Cellular Connection"),
+            (NetworkStats.mockGoodWifiConnection, "Wifi Connection"),
+            (NetworkStats.mockGoodEthConnection, "Ethernet Connection"),
+            (NetworkStats.mockExpensiveCellConnection, "Cellular Connection"),
         ]
     )
     func shortSummaryConnected(stats: NetworkStats, expected: String) {
@@ -57,28 +57,28 @@ struct NetworkStatsTests {
 
     @Test("WiFi interface is correctly identified")
     func wifiInterface() {
-        let stats = NetworkStats.mockGoodWifiCoonection
+        let stats = NetworkStats.mockGoodWifiConnection
         #expect(stats.interfaceType == .wifi)
         #expect(stats.connectionTechnology == .wifi)
     }
 
     @Test("Ethernet interface is correctly identified")
     func ethernetInterface() {
-        let stats = NetworkStats.mockGoodEthCoonection
+        let stats = NetworkStats.mockGoodEthConnection
         #expect(stats.interfaceType == .ethernet)
         #expect(stats.connectionTechnology == .wiredEthernet)
     }
 
     @Test("Expensive WiFi is reclassified as cellular (hotspot)")
     func hotspotWifiReclassified() {
-        let stats = NetworkStats.mockExpansiveCellCoonection
+        let stats = NetworkStats.mockExpensiveCellConnection
         #expect(stats.interfaceType == .cellular)
         #expect(stats.isExpensive)
     }
 
     @Test("Constrained connection is detected")
     func constrainedDetected() {
-        let stats = NetworkStats.mockConstrainedWifiCoonection
+        let stats = NetworkStats.mockConstrainedWifiConnection
         #expect(stats.isConstrained)
     }
 
@@ -95,9 +95,9 @@ struct NetworkStatsTests {
     @Test(
         "Link quality is set correctly on mocks",
         arguments: [
-            (NetworkStats.mockGoodWifiCoonection, LinkQuality.good),
-            (NetworkStats.mockModerateWifiCoonection, LinkQuality.moderate),
-            (NetworkStats.mockBadWifiCoonection, LinkQuality.minimal),
+            (NetworkStats.mockGoodWifiConnection, LinkQuality.good),
+            (NetworkStats.mockModerateWifiConnection, LinkQuality.moderate),
+            (NetworkStats.mockBadWifiConnection, LinkQuality.minimal),
             (NetworkStats.mockDisconnected, LinkQuality.unknown),
         ]
     )

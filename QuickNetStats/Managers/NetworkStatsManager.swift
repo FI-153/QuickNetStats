@@ -1,5 +1,5 @@
 //
-//  CommandLineManager.swift
+//  NetworkStatsManager.swift
 //  QuickNetStats
 //
 //  Created by Federico Imberti on 2025-11-07.
@@ -22,8 +22,12 @@ class NetworkStatsManager: ObservableObject {
     /// Track if the monitor is monitoring to avoid multiple monitoring sessions.
     private var isMonitoring: Bool
 
-    /// Track if it is the first update to avoid sending notifications on launch
-    private var isFirstUpdate: Bool
+    /// Track if it is the first update to avoid sending notifications on launch. Internal for testing.
+    var isFirstUpdate: Bool
+
+    /// The latest connected snapshot reported by the path. Cleared when the path
+    /// goes down or monitoring stops. Drives poll-based recovery. Internal for testing.
+    var lastPathStats: NetworkStats?
 
     /// The reachability checker used to verify internet connectivity.
     private let reachabilityChecker: InternetReachabilityChecking
@@ -34,14 +38,19 @@ class NetworkStatsManager: ObservableObject {
     /// Tracks the polling loop task so it can be cancelled on disconnect or stop.
     private var pollingTask: Task<Void, Never>?
 
-    init(reachabilityChecker: InternetReachabilityChecking = InternetReachabilityChecker()) {
+    init(
+        reachabilityChecker: InternetReachabilityChecking = InternetReachabilityChecker(),
+        autoStart: Bool = true
+    ) {
         self.monitor = NWPathMonitor()
         self.queue = DispatchQueue(label: "com.quickconncheck.networkMonitor")
         self.netStats = NetworkStats.defaultOffline
         self.isMonitoring = false
         self.isFirstUpdate = true
         self.reachabilityChecker = reachabilityChecker
-        startMonitoring()
+        if autoStart {
+            startMonitoring()
+        }
     }
 
     // MARK: - Monitoring
@@ -68,6 +77,7 @@ class NetworkStatsManager: ObservableObject {
         self.isMonitoring = false
         reachabilityTask?.cancel()
         stopPolling()
+        lastPathStats = nil
         self.netStats = NetworkStats.defaultOffline
 
         // Cancel the monitor
@@ -81,6 +91,11 @@ class NetworkStatsManager: ObservableObject {
     /// Refresh the monitor by stopping the current one and starting a new monitor.
     func refresh() {
         stopMonitoring()
+
+        // stopMonitoring resets netStats to offline; treat the next publish as a
+        // baseline so the restart doesn't fire a spurious "connected" notification.
+        isFirstUpdate = true
+
         startMonitoring()
     }
 
@@ -96,22 +111,23 @@ class NetworkStatsManager: ObservableObject {
         guard pathStats.isConnected else {
             // Path says disconnected — publish immediately, stop polling
             stopPolling()
+            lastPathStats = nil
             publishStats(pathStats)
             return
         }
 
         // Path says connected — verify with reachability check
-        reachabilityTask = Task {
-            let reachable = await reachabilityChecker.checkReachability()
+        lastPathStats = pathStats
+        reachabilityTask = Task { [weak self] in
+            guard let self else { return }
+            let reachable = await self.reachabilityChecker.checkReachability()
             guard !Task.isCancelled else { return }
 
-            if reachable {
-                self.publishStats(pathStats)
-                self.startPolling()
-            } else {
-                self.publishStats(NetworkStats.defaultOffline)
-                self.stopPolling()
-            }
+            self.publishStats(reachable ? pathStats : NetworkStats.defaultOffline)
+
+            // Keep polling while the path is satisfied so recovery is detected
+            // even when the probe failed (e.g. the router lost upstream).
+            self.startPolling()
         }
     }
 
@@ -135,11 +151,11 @@ class NetworkStatsManager: ObservableObject {
     /// Starts the 15-second periodic reachability polling loop.
     private func startPolling() {
         stopPolling()
-        pollingTask = Task {
+        pollingTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(15))
-                guard !Task.isCancelled else { break }
-                await pollReachability()
+                guard !Task.isCancelled, let self else { break }
+                await self.pollReachability()
             }
         }
     }
@@ -154,46 +170,22 @@ class NetworkStatsManager: ObservableObject {
     private func pollReachability() async {
         let reachable = await reachabilityChecker.checkReachability()
         guard !Task.isCancelled else { return }
+        applyPollResult(reachable: reachable)
+    }
 
-        if !reachable {
+    /// Publishes stats for a poll result, only on connectivity transitions so
+    /// repeated identical results don't re-publish. Internal for testing.
+    func applyPollResult(reachable: Bool) {
+        guard let pathStats = lastPathStats else { return }
+
+        if reachable && !netStats.isConnected {
+            publishStats(pathStats)
+        } else if !reachable && netStats.isConnected {
             publishStats(NetworkStats.defaultOffline)
-            stopPolling()
         }
     }
 
     deinit {
         stopMonitoring()
     }
-}
-
-import Playgrounds
-#Playground {
-    let monitor = NWPathMonitor()
-    let queue = DispatchQueue(label: "com.quickconncheck.networkMonitor")
-    var netStats = NetworkStats.defaultOffline
-    
-    monitor.pathUpdateHandler = { path in
-        
-        // Check the path's status
-        let connected = (path.status == .satisfied)
-        
-        // Update the @Published property on the main thread
-        DispatchQueue.main.async {
-            netStats = NetworkStats(path: path)
-            
-            print(path.status)
-            print("reason: \(path.unsatisfiedReason)")
-            print("wifi?: \(path.usesInterfaceType(.wifi))")
-            print("eth?: \(path.usesInterfaceType(.wiredEthernet))")
-            print("constrained?: \(path.isConstrained)")
-            print("expansive?: \(path.isExpensive)")
-            if #available(macOS 26, *) {
-                print("quality: \(path.linkQuality)")
-            }
-        }
-    }
-    
-    // Start the monitor on background queue
-    monitor.start(queue: queue)
-    
 }

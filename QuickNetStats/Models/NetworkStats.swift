@@ -61,10 +61,7 @@ struct NetworkStats {
     
     /// Returns the quality of the connection
     var linkQuality: LinkQuality?
-    
-    /// Describes as a string the network quality
-    var linkQualityDescription: String?
-    
+
     // MARK: - Computed Properties
     
     var isConnected: Bool {
@@ -155,16 +152,12 @@ struct NetworkStats {
             switch path.linkQuality {
             case .minimal:
                 self.linkQuality = .minimal
-                self.linkQualityDescription = "Minimal"
             case .moderate:
                 self.linkQuality = .moderate
-                self.linkQualityDescription = "Moderate"
             case .good:
                 self.linkQuality = .good
-                self.linkQualityDescription = "Good"
             default:
                 self.linkQuality = .unknown
-                self.linkQualityDescription = ""
             }
         }
         
@@ -208,7 +201,7 @@ struct NetworkStats {
     }
     
     // MARK: - Mockups
-    static var mockGoodWifiCoonection: NetworkStats {
+    static var mockGoodWifiConnection: NetworkStats {
         return NetworkStats(
             status: .satisfied,
             interfaceType: .wifi,
@@ -220,7 +213,7 @@ struct NetworkStats {
         )
     }
     
-    static var mockModerateWifiCoonection: NetworkStats {
+    static var mockModerateWifiConnection: NetworkStats {
         return NetworkStats(
             status: .satisfied,
             interfaceType: .wifi,
@@ -232,7 +225,7 @@ struct NetworkStats {
         )
     }
     
-    static var mockBadWifiCoonection: NetworkStats {
+    static var mockBadWifiConnection: NetworkStats {
         return NetworkStats(
             status: .satisfied,
             interfaceType: .wifi,
@@ -244,7 +237,7 @@ struct NetworkStats {
         )
     }
     
-    static var mockGoodEthCoonection: NetworkStats {
+    static var mockGoodEthConnection: NetworkStats {
         return NetworkStats(
             status: .satisfied,
             interfaceType: .ethernet,
@@ -256,7 +249,7 @@ struct NetworkStats {
         )
     }
     
-    static var mockConstrainedWifiCoonection: NetworkStats {
+    static var mockConstrainedWifiConnection: NetworkStats {
         return NetworkStats(
             status: .satisfied,
             interfaceType: .wifi,
@@ -280,7 +273,7 @@ struct NetworkStats {
         )
     }
     
-    static var mockExpansiveCellCoonection: NetworkStats {
+    static var mockExpensiveCellConnection: NetworkStats {
         return NetworkStats(
             status: .satisfied,
             interfaceType: .cellular,

@@ -13,10 +13,20 @@ class NetworkDetailsManager: ObservableObject {
     
     /// The private IP of the machine.
     @Published var privateIP: String?
-    
+
     /// The public IP of this machine.
     @Published var publicIP: String?
-        
+
+    /// The URLSession used to fetch the public IP (injectable for testing).
+    /// Defaults to the shared 5-second-timeout reachability session.
+    private let session: URLSession
+
+    /// Creates a manager with the given session.
+    /// - Parameter session: The session used for the public IP lookup.
+    init(session: URLSession = .reachabilitySession) {
+        self.session = session
+    }
+
     /// Populate the published attributes for public and private IP.
     func getAddresses() async {
         self.publicIP = await fetchPublicIpAddress()
@@ -45,7 +55,7 @@ class NetworkDetailsManager: ObservableObject {
         let url = URL(string: "https://api.ipify.org")!
 
         do {
-            let (data, resp) = try await URLSession.shared.data(from: url)
+            let (data, resp) = try await session.data(from: url)
             
             guard let httpResp = resp as? HTTPURLResponse, (200...299).contains(httpResp.statusCode) else {
                 return nil
@@ -75,7 +85,12 @@ class NetworkDetailsManager: ObservableObject {
         
         for ptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
             let interface = ptr.pointee
-            
+
+            // Skip interfaces that are down or not running so we don't return
+            // an address from an inactive interface.
+            let flags = Int32(interface.ifa_flags)
+            guard (flags & IFF_UP) != 0 && (flags & IFF_RUNNING) != 0 else { continue }
+
             let addrFamily = interface.ifa_addr.pointee.sa_family
             guard addrFamily == UInt8(AF_INET) else { continue }
             
@@ -99,13 +114,7 @@ class NetworkDetailsManager: ObservableObject {
         }
         
         freeifaddrs(ifaddr)
-        
+
         return address
     }
-}
-
-import Playgrounds
-#Playground {
-    let man = NetworkDetailsManager()
-    await man.getAddresses()
 }
