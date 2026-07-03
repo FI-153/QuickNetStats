@@ -2,21 +2,17 @@ import SwiftUI
 
 struct NotificationView: View {
     @ObservedObject var settings: Settings
-    
-    init(settings: Settings) {
-        self.settings = settings
-        NotificationsManager.shared.checkNotificationStatus()
-    }
+    @ObservedObject private var notificationsManager = NotificationsManager.shared
 
     var body: some View {
         Form {
-            
-            if !NotificationsManager.shared.areNotificationsEnabled {
+
+            if !notificationsManager.areNotificationsEnabled {
                 Section {
                     Text("Notifications are disabled by the user")
                 }
             }
-            
+
             ToggleView(
                 title: "Send Notifications",
                 variable: settings.$isNotificationActive,
@@ -24,9 +20,9 @@ struct NotificationView: View {
             )
             .onChange(of: settings.isNotificationActive) { newValue in
                 if newValue == true {
-                    NotificationsManager.shared.requestNotificationPermission()
+                    notificationsManager.requestNotificationPermission()
                 }
-                NotificationsManager.shared.checkNotificationStatus()
+                notificationsManager.checkNotificationStatus()
             }
             
             Section {
@@ -60,6 +56,9 @@ struct NotificationView: View {
         }
         .formStyle(.grouped)
         .padding()
+        .task {
+            notificationsManager.checkNotificationStatus()
+        }
     }
 }
 

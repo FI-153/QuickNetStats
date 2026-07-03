@@ -182,34 +182,59 @@ struct NotificationsManagerCheckTests {
     }
 }
 
-@Suite("NotificationsManager Settle Behavior")
+@Suite("NotificationsManager Settle Behavior", .serialized)
 struct NotificationsManagerSettleTests {
 
-    @Test("No notification when state returns to original during settle window")
-    func blipProducesNoNotification() async {
-        let manager = NotificationsManager.shared
-
-        // Enable notifications globally
-        let defaults = UserDefaults.standard
+    /// Configures the shared manager with an isolated defaults suite and
+    /// suppressed system notifications. Returns the suite for cleanup.
+    private func configureManager(_ manager: NotificationsManager) -> UserDefaults {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
         defaults.set(true, forKey: Settings.UserDefaultsKeys.isNotificationActive)
         defaults.set(InternetNotificationBehavior.changes.rawValue,
                      forKey: Settings.UserDefaultsKeys.notifyInternetBehavior)
+        manager.defaults = defaults
+        manager.suppressSystemNotifications = true
+        manager.lastDeliveredNotification = nil
+        return defaults
+    }
 
-        let connected = NetworkStats.mockGoodWifiCoonection
+    private func restore(_ manager: NotificationsManager) {
+        manager.defaults = .standard
+        manager.suppressSystemNotifications = false
+        manager.lastDeliveredNotification = nil
+    }
+
+    @Test("A blip that settles back to the original state delivers nothing")
+    func blipProducesNoNotification() async {
+        let manager = NotificationsManager.shared
+        _ = configureManager(manager)
+        defer { restore(manager) }
+
+        let connected = NetworkStats.mockGoodWifiConnection
         let disconnected = NetworkStats.mockDisconnected
 
-        // Simulate blip: connected -> disconnected -> connected
+        // Blip: connected -> disconnected -> connected within the settle window
         manager.checkForNotifications(oldStats: connected, newStats: disconnected)
         manager.checkForNotifications(oldStats: disconnected, newStats: connected)
 
-        // Give settle timer time to fire (settleDelay is 1s + margin)
         try? await Task.sleep(for: .seconds(2))
 
-        // After settle, the internal state should be reset
-        // The fact that original (connected) == settled (connected) means no notification
-        // This test verifies the timer mechanism doesn't crash and the blip is absorbed
+        #expect(manager.lastDeliveredNotification == nil)
+    }
 
-        defaults.removeObject(forKey: Settings.UserDefaultsKeys.isNotificationActive)
-        defaults.removeObject(forKey: Settings.UserDefaultsKeys.notifyInternetBehavior)
+    @Test("A genuine disconnect that persists past the settle window delivers")
+    func realChangeDelivers() async {
+        let manager = NotificationsManager.shared
+        _ = configureManager(manager)
+        defer { restore(manager) }
+
+        manager.checkForNotifications(
+            oldStats: NetworkStats.mockGoodWifiConnection,
+            newStats: NetworkStats.mockDisconnected
+        )
+
+        try? await Task.sleep(for: .seconds(2))
+
+        #expect(manager.lastDeliveredNotification?.title == "Internet Disconnected")
     }
 }

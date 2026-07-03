@@ -15,11 +15,22 @@ class MockURLProtocol: URLProtocol {
 
     nonisolated(unsafe) static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
 
+    /// Per-session handlers keyed by a token carried in the request headers.
+    /// Lets suites that mock different hosts run in parallel without clobbering
+    /// each other's global `requestHandler` (Swift Testing runs suites concurrently).
+    nonisolated(unsafe) static var handlers: [String: (URLRequest) throws -> (HTTPURLResponse, Data)] = [:]
+
+    /// The header used to route a request to its owning session's handler.
+    static let tokenHeader = "X-Mock-Token"
+
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
-        guard let handler = Self.requestHandler else {
+        let scopedHandler = request.value(forHTTPHeaderField: Self.tokenHeader)
+            .flatMap { Self.handlers[$0] }
+
+        guard let handler = scopedHandler ?? Self.requestHandler else {
             client?.urlProtocolDidFinishLoading(self)
             return
         }
@@ -44,7 +55,12 @@ struct InternetReachabilityCheckerTests {
     /// Creates a `URLSession` that routes all requests through `MockURLProtocol`.
     private func mockSession() -> URLSession {
         let config = URLSessionConfiguration.ephemeral
+        let token = UUID().uuidString
+        config.httpAdditionalHeaders = [MockURLProtocol.tokenHeader: token]
         config.protocolClasses = [MockURLProtocol.self]
+        // Snapshot the handler set by the test body into an isolated, token-keyed
+        // slot so parallel suites don't clobber each other's global handler.
+        MockURLProtocol.handlers[token] = MockURLProtocol.requestHandler
         return URLSession(configuration: config)
     }
 

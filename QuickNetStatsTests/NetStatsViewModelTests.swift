@@ -17,9 +17,9 @@ struct NetStatsViewModelTests {
     @Test(
         "linkQualityColor maps quality to correct color",
         arguments: [
-            (NetworkStats.mockGoodWifiCoonection, Color.green),
-            (NetworkStats.mockModerateWifiCoonection, Color.orange),
-            (NetworkStats.mockBadWifiCoonection, Color.red),
+            (NetworkStats.mockGoodWifiConnection, Color.green),
+            (NetworkStats.mockModerateWifiConnection, Color.orange),
+            (NetworkStats.mockBadWifiConnection, Color.red),
             (NetworkStats.mockDisconnected, Color.secondary),
         ]
     )
@@ -33,7 +33,7 @@ struct NetStatsViewModelTests {
     @Test("ViewModel stores IP addresses")
     func storesIPs() {
         let vm = NetStatsViewModel(
-            netStats: NetworkStats.mockGoodWifiCoonection,
+            netStats: NetworkStats.mockGoodWifiConnection,
             privateIP: "192.168.1.1",
             publicIP: "8.8.8.8"
         )

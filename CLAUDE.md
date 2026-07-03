@@ -89,7 +89,7 @@ Three root-level `@StateObject`s are created in the app struct: `NetworkStatsMan
 - **Default actor isolation**: Project uses `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` build setting
 - **Accessibility**: Animation settings respect `NSWorkspace.shared.accessibilityDisplayShouldReduceMotion`
 - **Bundle IDs**: `com.federicoimberti.quicknetstats.dev` (debug) / `com.federicoimberti.quicknetstats` (release)
-- **Static mockups**: `NetworkStats` has static mock properties (e.g., `mockGoodWifiCoonection`) used for SwiftUI previews
+- **Static mockups**: `NetworkStats` has static mock properties (e.g., `mockGoodWifiConnection`) used for SwiftUI previews
 
 ## Releasing
 

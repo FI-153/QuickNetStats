@@ -33,29 +33,37 @@ class NotificationsManager: ObservableObject {
     /// Most recent network state received during the current settle window
     private var latestStats: NetworkStats?
 
-    /// The pending settle timer; cancelled and restarted on each new event
-    private var settleTimer: DispatchWorkItem?
+    /// The pending settle task; cancelled and restarted on each new event
+    private var settleTask: Task<Void, Never>?
+
+    /// User defaults used to read notification preferences; overridable in tests to
+    /// avoid polluting the real preferences.
+    var defaults: UserDefaults = .standard
+
+    /// The most recent notification delivered through the settle pipeline. Exposed for testing.
+    var lastDeliveredNotification: AppNotification?
+
+    /// When true, `scheduleNotification` short-circuits so tests never hit the system center.
+    var suppressSystemNotifications = false
         
     /// Checks the current notification permission status from system settings
     func checkNotificationStatus() {
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            DispatchQueue.main.async {
-                self.areNotificationsEnabled = (settings.authorizationStatus == .authorized)
-            }
+        Task {
+            let settings = await UNUserNotificationCenter.current().notificationSettings()
+            self.areNotificationsEnabled = (settings.authorizationStatus == .authorized)
         }
     }
-    
-    /// Request permisison to send a notification
+
+    /// Request permission to send a notification
     func requestNotificationPermission() {
-        let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    print("Authorization Error: \(error.localizedDescription)")
-                    self.notificationAuthError = error.localizedDescription
-                }
-                
+        Task {
+            do {
+                let granted = try await UNUserNotificationCenter.current()
+                    .requestAuthorization(options: [.alert, .sound, .badge])
                 self.areNotificationsEnabled = granted
+            } catch {
+                print("Authorization Error: \(error.localizedDescription)")
+                self.notificationAuthError = error.localizedDescription
             }
         }
     }
@@ -66,12 +74,15 @@ class NotificationsManager: ObservableObject {
     }
     
     /// Send a notification
-    func notify(_ notification: Notification) {
+    func notify(_ notification: AppNotification) {
+        lastDeliveredNotification = notification
         scheduleNotification(titled: notification.title, notification.body)
     }
-    
-    /// Schedule a notification to be sent immediatelly
+
+    /// Schedule a notification to be sent immediately
     private func scheduleNotification(titled title: String, _ body: String) {
+        guard !suppressSystemNotifications else { return }
+
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -86,7 +97,7 @@ class NotificationsManager: ObservableObject {
     }
     
     private func notificationsGloballyEnabled() -> Bool {
-        UserDefaults.standard.bool(forKey: Settings.UserDefaultsKeys.isNotificationActive)
+        defaults.bool(forKey: Settings.UserDefaultsKeys.isNotificationActive)
     }
         
     /// Queue a settle evaluation. On first change, snapshots the original state.
@@ -101,14 +112,13 @@ class NotificationsManager: ObservableObject {
         }
         latestStats = newStats
 
-        // Cancel any pending timer and start a new one
-        settleTimer?.cancel()
-
-        let work = DispatchWorkItem { [weak self] in
+        // Cancel any pending task and start a new one
+        settleTask?.cancel()
+        settleTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(self?.settleDelay ?? 1.0))
+            guard !Task.isCancelled else { return }
             self?.evaluateSettledState()
         }
-        settleTimer = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + settleDelay, execute: work)
     }
 
     /// Called when the settle timer fires. Compares original vs settled state
@@ -117,19 +127,19 @@ class NotificationsManager: ObservableObject {
         guard let original = originalStats, let settled = latestStats else {
             originalStats = nil
             latestStats = nil
-            settleTimer = nil
+            settleTask = nil
             return
         }
 
         // Reset settle window
         originalStats = nil
         latestStats = nil
-        settleTimer = nil
+        settleTask = nil
 
-        let defaults = UserDefaults.standard
+        let defaults = self.defaults
 
         // Evaluate all three categories
-        var candidates: [QuickNetStats.Notification] = []
+        var candidates: [AppNotification] = []
 
         if let internetNotification = checkInternetStatusChanges(
             wasConnected: original.isConnected,
