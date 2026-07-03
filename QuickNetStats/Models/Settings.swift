@@ -44,7 +44,7 @@ class Settings: ObservableObject {
     var showQualityInMenu: Bool = true
     
     @AppStorage(UserDefaultsKeys.useAnimations)
-    var useAnimations: Bool = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+    var useAnimations: Bool = !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
     
     @AppStorage(UserDefaultsKeys.isColorful)
     var isColorful: Bool = true

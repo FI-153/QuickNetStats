@@ -9,9 +9,6 @@ import Testing
 import Foundation
 @testable import QuickNetStats
 
-/// Type alias to disambiguate from Foundation.Notification
-typealias AppNotification = QuickNetStats.Notification
-
 @Suite("Notification Model")
 struct NotificationTests {
 
@@ -79,12 +76,19 @@ struct NotificationTests {
         #expect(a < b)
     }
 
-    // MARK: - Equatable: UUID-based
+    // MARK: - Equatable: content-based (priority, date, title)
 
-    @Test("Two notifications with different UUIDs are not equal")
-    func differentUUIDsNotEqual() {
+    @Test("Notifications with the same priority, date, and title are equal")
+    func sameContentIsEqual() {
         let a = AppNotification(title: "Same", body: "Same", priority: 1, created: now)
         let b = AppNotification(title: "Same", body: "Same", priority: 1, created: now)
+        #expect(a == b)
+    }
+
+    @Test("Notifications differing in title are not equal")
+    func differentTitleNotEqual() {
+        let a = AppNotification(title: "Alpha", body: "", priority: 1, created: now)
+        let b = AppNotification(title: "Beta", body: "", priority: 1, created: now)
         #expect(a != b)
     }
 

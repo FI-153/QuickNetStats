@@ -10,52 +10,60 @@ import Combine
 
 class NotificationsManager: ObservableObject {
     
-    private init(){
+    private init() {
         self.areNotificationsEnabled = false
-        self.cooldown = 0.2
-        self.previousNotifificationTime = Date.distantPast
-        self.notificationStack = []
         checkNotificationStatus()
     }
-    
+
     /// The shared instance of the NotificationsManager class
     static let shared = NotificationsManager()
-    
+
     /// It is set to true when the user authorizes notifications and they are allowed in the settings page. If they are disabled by the user in settings
     /// then this value becomes false (eg. user authorized the app to send notifications but later disabled them in settings --> false)
     @Published var areNotificationsEnabled: Bool
-    
+
     @Published var notificationAuthError: String?
-    
-    /// The cooldown time in seconds between two notificaitons
-    private var cooldown: Double
-    
-    /// The last time a notification was sent
-    private var previousNotifificationTime: Date
-    
-    /// A stack that collects all notifications requests
-    private var notificationStack: [Notification]
+
+    /// Duration in seconds to wait for the network state to settle before evaluating notifications
+    private let settleDelay: TimeInterval = 1.0
+
+    /// Snapshot of the network state when the first change in a settle window arrived
+    private var originalStats: NetworkStats?
+
+    /// Most recent network state received during the current settle window
+    private var latestStats: NetworkStats?
+
+    /// The pending settle task; cancelled and restarted on each new event
+    private var settleTask: Task<Void, Never>?
+
+    /// User defaults used to read notification preferences; overridable in tests to
+    /// avoid polluting the real preferences.
+    var defaults: UserDefaults = .standard
+
+    /// The most recent notification delivered through the settle pipeline. Exposed for testing.
+    var lastDeliveredNotification: AppNotification?
+
+    /// When true, `scheduleNotification` short-circuits so tests never hit the system center.
+    var suppressSystemNotifications = false
         
     /// Checks the current notification permission status from system settings
     func checkNotificationStatus() {
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            DispatchQueue.main.async {
-                self.areNotificationsEnabled = (settings.authorizationStatus == .authorized)
-            }
+        Task {
+            let settings = await UNUserNotificationCenter.current().notificationSettings()
+            self.areNotificationsEnabled = (settings.authorizationStatus == .authorized)
         }
     }
-    
-    /// Request permisison to send a notification
+
+    /// Request permission to send a notification
     func requestNotificationPermission() {
-        let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    print("Authorization Error: \(error.localizedDescription)")
-                    self.notificationAuthError = error.localizedDescription
-                }
-                
+        Task {
+            do {
+                let granted = try await UNUserNotificationCenter.current()
+                    .requestAuthorization(options: [.alert, .sound, .badge])
                 self.areNotificationsEnabled = granted
+            } catch {
+                print("Authorization Error: \(error.localizedDescription)")
+                self.notificationAuthError = error.localizedDescription
             }
         }
     }
@@ -66,12 +74,15 @@ class NotificationsManager: ObservableObject {
     }
     
     /// Send a notification
-    func notify(_ notification: Notification) {
+    func notify(_ notification: AppNotification) {
+        lastDeliveredNotification = notification
         scheduleNotification(titled: notification.title, notification.body)
     }
-    
-    /// Schedule a notification to be sent immediatelly
+
+    /// Schedule a notification to be sent immediately
     private func scheduleNotification(titled title: String, _ body: String) {
+        guard !suppressSystemNotifications else { return }
+
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -86,72 +97,85 @@ class NotificationsManager: ObservableObject {
     }
     
     private func notificationsGloballyEnabled() -> Bool {
-        UserDefaults.standard.bool(forKey: Settings.UserDefaultsKeys.isNotificationActive)
+        defaults.bool(forKey: Settings.UserDefaultsKeys.isNotificationActive)
     }
         
-    /// Queue notifications to be sent once every `cooldown` period
+    /// Queue a settle evaluation. On first change, snapshots the original state.
+    /// Each subsequent change restarts the timer. When the timer fires after
+    /// `settleDelay` seconds of quiet, compares original vs settled state.
     func checkForNotifications(oldStats: NetworkStats, newStats: NetworkStats) {
-        
         guard self.notificationsGloballyEnabled() else { return }
-        
-        // Internet onnection
-        if let new_notification = self.checkInternetStatusChanges(
-            wasConnected: oldStats.isConnected,
-            isConnected: newStats.isConnected,
-            newInterface: newStats.interfaceType,
-        ) {
-            notificationStack.append(new_notification)
+
+        // Snapshot original state on the first change in this settle window
+        if originalStats == nil {
+            originalStats = oldStats
         }
-        
-        // Interface
-        if let new_notification = self.checkInterfaceChanges(
-            wasConnected: oldStats.isConnected,
-            isConnected: newStats.isConnected,
-            oldInterface: oldStats.interfaceType,
-            newInterface: newStats.interfaceType
-        ) {
-            notificationStack.append(new_notification)
-        }
-        
-        // Link quality
-        if let new_notification = self.checkLinkQualityChanges(
-            oldQuality: oldStats.linkQuality?.rawValue ?? 0,
-            newQuality: newStats.linkQuality?.rawValue ?? 0
-        ) {
-            notificationStack.append(new_notification)
-        }
-                
-        sendMostImportantNotificationOnStack()
-    }
-    
-    /// Send the most important notification on the `notificationStack` if the `cooldown` period has passed.
-    /// If a notificaiton is sent, it then empties `notificationStack` and sets a new `previousNotifificationTime`
-    private func sendMostImportantNotificationOnStack() {
-        let now = Date()
-        let nextAllowedTime = self.previousNotifificationTime.addingTimeInterval(self.cooldown)
-        
-        if now >= nextAllowedTime {
-            if !notificationStack.isEmpty {
-                notificationStack.sort()
-                self.notify(notificationStack.removeFirst())
-                self.notificationStack = []
-                self.previousNotifificationTime = Date()
-            }
-        } else {
-            // If we are within the cooldown period and have pending notifications,
-            // schedule a check for when the cooldown expires.
-            if !notificationStack.isEmpty {
-                let delay = nextAllowedTime.timeIntervalSince(now)
-                DispatchQueue.main.asyncAfter(deadline: .now() + max(0, delay)) { [weak self] in
-                    self?.sendMostImportantNotificationOnStack()
-                }
-            }
+        latestStats = newStats
+
+        // Cancel any pending task and start a new one
+        settleTask?.cancel()
+        settleTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(self?.settleDelay ?? 1.0))
+            guard !Task.isCancelled else { return }
+            self?.evaluateSettledState()
         }
     }
+
+    /// Called when the settle timer fires. Compares original vs settled state
+    /// and sends at most one notification (the highest priority).
+    private func evaluateSettledState() {
+        guard let original = originalStats, let settled = latestStats else {
+            originalStats = nil
+            latestStats = nil
+            settleTask = nil
+            return
+        }
+
+        // Reset settle window
+        originalStats = nil
+        latestStats = nil
+        settleTask = nil
+
+        let defaults = self.defaults
+
+        // Evaluate all three categories
+        var candidates: [AppNotification] = []
+
+        if let internetNotification = checkInternetStatusChanges(
+            wasConnected: original.isConnected,
+            isConnected: settled.isConnected,
+            newInterface: settled.interfaceType,
+            defaults: defaults
+        ) {
+            candidates.append(internetNotification)
+        }
+
+        if let interfaceNotification = checkInterfaceChanges(
+            wasConnected: original.isConnected,
+            isConnected: settled.isConnected,
+            oldInterface: original.interfaceType,
+            newInterface: settled.interfaceType,
+            defaults: defaults
+        ) {
+            candidates.append(interfaceNotification)
+        }
+
+        if let qualityNotification = checkLinkQualityChanges(
+            oldQuality: original.linkQuality?.rawValue ?? 0,
+            newQuality: settled.linkQuality?.rawValue ?? 0,
+            defaults: defaults
+        ) {
+            candidates.append(qualityNotification)
+        }
+
+        // Send only the highest-priority notification (Notification conforms to Comparable)
+        if let best = candidates.min() {
+            notify(best)
+        }
+    }
     
-    /// Check internet status changes based on what the user configured on the settings.
-    /// If the status has changes and the notification cooldown is over then send the notification
-    private func checkInternetStatusChanges(
+    /// Check internet status changes based on what the user configured in settings
+    func checkInternetStatusChanges(
         wasConnected: Bool,
         isConnected: Bool,
         newInterface: NetworkInterfaceType,
@@ -202,14 +226,13 @@ class NotificationsManager: ObservableObject {
         return nil
     }
     
-    /// Check the link quality changes based on what the user configured on the settings
-    /// If the status has changes and the notification cooldown is over then send the notification
-    private func checkLinkQualityChanges(
+    /// Check link quality changes based on what the user configured in settings
+    func checkLinkQualityChanges(
         oldQuality: Int,
         newQuality: Int,
         defaults: UserDefaults = UserDefaults.standard
     ) -> LinkQualityStatusNotification? {
-        let liknQualityNotificationsBehavior = LinkQualityNotificationBehavior(
+        let linkQualityNotificationsBehavior = LinkQualityNotificationBehavior(
             rawValue: defaults
                 .integer(
                     forKey: Settings.UserDefaultsKeys.notifyQualityBehavior
@@ -220,7 +243,7 @@ class NotificationsManager: ObservableObject {
             var shouldNotify = false
             var title = ""
             
-            switch liknQualityNotificationsBehavior {
+            switch linkQualityNotificationsBehavior {
             case .improves:
                 if newQuality > oldQuality {
                     shouldNotify = true
@@ -248,9 +271,8 @@ class NotificationsManager: ObservableObject {
         return nil
     }
     
-    /// Check if the interface changed and notiffies if the user toggled this notification
-    /// If the status has changes and the notification cooldown is over then send the notification
-    private func checkInterfaceChanges(
+    /// Check if the interface changed and notify if the user enabled this notification
+    func checkInterfaceChanges(
         wasConnected: Bool,
         isConnected: Bool,
         oldInterface: NetworkInterfaceType,

@@ -1,5 +1,5 @@
 //
-//  FooterButtonView.swift
+//  FooterButtonLabelView.swift
 //  QuickNetStats
 //
 //  Created by Federico Imberti on 2025-11-09.

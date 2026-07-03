@@ -89,7 +89,39 @@ Three root-level `@StateObject`s are created in the app struct: `NetworkStatsMan
 - **Default actor isolation**: Project uses `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` build setting
 - **Accessibility**: Animation settings respect `NSWorkspace.shared.accessibilityDisplayShouldReduceMotion`
 - **Bundle IDs**: `com.federicoimberti.quicknetstats.dev` (debug) / `com.federicoimberti.quicknetstats` (release)
-- **Static mockups**: `NetworkStats` has static mock properties (e.g., `mockGoodWifiCoonection`) used for SwiftUI previews
+- **Static mockups**: `NetworkStats` has static mock properties (e.g., `mockGoodWifiConnection`) used for SwiftUI previews
+
+## Releasing
+
+### Release script
+
+`./scripts/release.sh <tag>` handles the full release pipeline: archive, export, zip, notarize, staple, tag, push, and GitHub release creation.
+
+```bash
+# Beta release
+./scripts/release.sh V.2.2.0-Beta-2
+
+# Stable release
+./scripts/release.sh V.2.2.0
+```
+
+Tags containing `beta` or `Beta` are automatically marked as GitHub pre-releases.
+
+### Prerequisites
+
+- **GitHub CLI**: `brew install gh` (authenticated via `gh auth login`)
+- **Apple Developer ID Application certificate** installed in Keychain
+- **Notarization credentials** stored in the keychain:
+  ```bash
+  xcrun notarytool store-credentials quicknetstats-notary
+  ```
+  This prompts for Apple ID, an app-specific password (generate at [appleid.apple.com](https://appleid.apple.com/account/manage) under Sign-In and Security > App-Specific Passwords), and Team ID (`7F47MKWBPJ`).
+- Working tree must be **clean** (no uncommitted changes)
+
+### Tag naming convention
+
+- **Stable**: `V.2.2.0`
+- **Beta**: `V.2.2.0-Beta-1`
 
 ## CI/CD
 
@@ -114,8 +146,12 @@ implementation checklists or checkboxes. The user will ask for implementation st
 after approving the plan. Do not add execution details, step numbering, or checkbox lists unless
 the user explicitly requests them.
 
-Once a plan is approved and the user asks for implementation steps, Claude must create an
-implementation checklist in the plan file. After implementation begins, Claude must follow the
+**Single file per task**: The design spec and the implementation plan must live in the **same file**
+in `context/planning/`. The design sections come first, followed by the implementation steps
+appended below. Do not create separate files for the design and the plan.
+
+Once a plan is approved and the user asks for implementation steps, Claude must append the
+implementation checklist to the same plan file. After implementation begins, Claude must follow the
 checklist in order, checking each box (`- [x]`) immediately upon completing the corresponding task.
 
 ### Plan file format

@@ -16,7 +16,7 @@ struct VisualsView: View {
             Section {
                 ToggleView(
                     title: "Use Animations",
-                    variable: settings.$showSummaryInMenu
+                    variable: settings.$useAnimations
                 )
                 
                 ToggleView(

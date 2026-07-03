@@ -59,27 +59,42 @@ struct AboutView: View {
     
     fileprivate func updatesSection() -> some View {
         VStack(spacing: 8) {
-            
-            Image (systemName: updateManager.isUpdateAvailable ? "arrow.down.circle" : "checkmark.circle")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 35)
-            
-            Text(updateManager.isUpdateAvailable ? "A New Version is Available!" : "You Are Up To Date!")
-                .font(.title3)
-                .fontWeight(.semibold)
-                .multilineTextAlignment(.center)
-            
-            if updateManager.isUpdateAvailable {
-                HStack(spacing: 4) {
-                    Text(updateManager.getCurrentVersion())
-                    Image(systemName: "arrow.right")
-                    Text(updateManager.latestVersion ?? updateManager.getCurrentVersion())
+            if let errorMessage = updateManager.errorMessage {
+                Image(systemName: "exclamationmark.triangle")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 35)
+
+                Text("Could Not Check for Updates")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .multilineTextAlignment(.center)
+
+                Text(errorMessage)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            } else {
+                Image(systemName: updateManager.isUpdateAvailable ? "arrow.down.circle" : "checkmark.circle")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 35)
+
+                Text(updateManager.isUpdateAvailable ? "A New Version is Available!" : "You Are Up To Date!")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .multilineTextAlignment(.center)
+
+                if updateManager.isUpdateAvailable {
+                    HStack(spacing: 4) {
+                        Text(updateManager.getCurrentVersion())
+                        Image(systemName: "arrow.right")
+                        Text(updateManager.latestVersion ?? updateManager.getCurrentVersion())
+                    }
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
                 }
-                .font(.headline)
-                .foregroundStyle(.secondary)
             }
-            
         }
     }
     

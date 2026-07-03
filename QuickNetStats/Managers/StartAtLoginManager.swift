@@ -9,7 +9,7 @@ import SwiftUI
 import ServiceManagement
 import Combine
 
-class LaunchAtLoginManager: ObservableObject {
+class StartAtLoginManager: ObservableObject {
 
     /// Tracks if the app is enabled to launch at login
     @Published var isEnabled: Bool

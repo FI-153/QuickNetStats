@@ -43,7 +43,7 @@ struct SettingsView: View {
         .navigationTitle(selectedPage.title)
         .toolbar {
             Button {
-                exit(0)
+                NSApp.terminate(nil)
             } label: {
                 HStack {
                     Image(systemName: "power")
