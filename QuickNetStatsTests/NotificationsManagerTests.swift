@@ -182,59 +182,65 @@ struct NotificationsManagerCheckTests {
     }
 }
 
-@Suite("NotificationsManager Settle Behavior", .serialized)
-struct NotificationsManagerSettleTests {
+// `NotificationsManagerSettleTests` is nested under `SingletonBoundSuites`
+// (declared in NetworkStatsManagerTests.swift) because it drives the shared
+// `NotificationsManager.shared` singleton, same as `NetworkStatsManagerTests`.
+// See that container's doc comment for why the two must not run concurrently.
+extension SingletonBoundSuites {
+    @Suite("NotificationsManager Settle Behavior", .serialized)
+    struct NotificationsManagerSettleTests {
 
-    /// Configures the shared manager with an isolated defaults suite and
-    /// suppressed system notifications. Returns the suite for cleanup.
-    private func configureManager(_ manager: NotificationsManager) -> UserDefaults {
-        let defaults = UserDefaults(suiteName: UUID().uuidString)!
-        defaults.set(true, forKey: Settings.UserDefaultsKeys.isNotificationActive)
-        defaults.set(InternetNotificationBehavior.changes.rawValue,
-                     forKey: Settings.UserDefaultsKeys.notifyInternetBehavior)
-        manager.defaults = defaults
-        manager.suppressSystemNotifications = true
-        manager.lastDeliveredNotification = nil
-        return defaults
-    }
+        /// Configures the shared manager with an isolated defaults suite and
+        /// suppressed system notifications. Returns the suite for cleanup.
+        private func configureManager(_ manager: NotificationsManager) -> UserDefaults {
+            let defaults = UserDefaults(suiteName: UUID().uuidString)!
+            defaults.set(true, forKey: Settings.UserDefaultsKeys.isNotificationActive)
+            defaults.set(InternetNotificationBehavior.changes.rawValue,
+                         forKey: Settings.UserDefaultsKeys.notifyInternetBehavior)
+            manager.defaults = defaults
+            manager.suppressSystemNotifications = true
+            manager.lastDeliveredNotification = nil
+            return defaults
+        }
 
-    private func restore(_ manager: NotificationsManager) {
-        manager.defaults = .standard
-        manager.suppressSystemNotifications = false
-        manager.lastDeliveredNotification = nil
-    }
+        private func restore(_ manager: NotificationsManager) {
+            manager.defaults = .standard
+            manager.suppressSystemNotifications = false
+            manager.lastDeliveredNotification = nil
+        }
 
-    @Test("A blip that settles back to the original state delivers nothing")
-    func blipProducesNoNotification() async {
-        let manager = NotificationsManager.shared
-        _ = configureManager(manager)
-        defer { restore(manager) }
+        @Test("A blip that settles back to the original state delivers nothing")
+        func blipProducesNoNotification() async {
+            let manager = NotificationsManager.shared
+            _ = configureManager(manager)
+            defer { restore(manager) }
 
-        let connected = NetworkStats.mockGoodWifiConnection
-        let disconnected = NetworkStats.mockDisconnected
+            let connected = NetworkStats.mockGoodWifiConnection
+            let disconnected = NetworkStats.mockDisconnected
 
-        // Blip: connected -> disconnected -> connected within the settle window
-        manager.checkForNotifications(oldStats: connected, newStats: disconnected)
-        manager.checkForNotifications(oldStats: disconnected, newStats: connected)
+            // Blip: connected -> disconnected -> connected within the settle window
+            manager.checkForNotifications(oldStats: connected, newStats: disconnected)
+            manager.checkForNotifications(oldStats: disconnected, newStats: connected)
 
-        try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .seconds(2))
 
-        #expect(manager.lastDeliveredNotification == nil)
-    }
+            #expect(manager.lastDeliveredNotification == nil)
+        }
 
-    @Test("A genuine disconnect that persists past the settle window delivers")
-    func realChangeDelivers() async {
-        let manager = NotificationsManager.shared
-        _ = configureManager(manager)
-        defer { restore(manager) }
+        @Test("A genuine disconnect that persists past the settle window delivers")
+        func realChangeDelivers() async {
+            let manager = NotificationsManager.shared
+            _ = configureManager(manager)
+            defer { restore(manager) }
 
-        manager.checkForNotifications(
-            oldStats: NetworkStats.mockGoodWifiConnection,
-            newStats: NetworkStats.mockDisconnected
-        )
+            manager.checkForNotifications(
+                oldStats: NetworkStats.mockGoodWifiConnection,
+                newStats: NetworkStats.mockDisconnected
+            )
 
-        try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .seconds(2))
 
-        #expect(manager.lastDeliveredNotification?.title == "Internet Disconnected")
+            #expect(manager.lastDeliveredNotification?.title == "Internet Disconnected")
+        }
     }
 }
