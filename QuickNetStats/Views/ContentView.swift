@@ -11,7 +11,8 @@ struct ContentView: View {
     
     @ObservedObject var netStatsManager: NetworkStatsManager
     @ObservedObject var netDetailsManager: NetworkDetailsManager
-    
+    @ObservedObject var connectionDetailsManager: ConnectionDetailsManager
+
     @EnvironmentObject var settings: Settings
     
     @Environment(\.openWindow) var openWindow
@@ -21,7 +22,8 @@ struct ContentView: View {
             NetStatsView(
                 netStats: netStatsManager.netStats,
                 privateIP: netDetailsManager.privateIP,
-                publicIP: netDetailsManager.publicIP
+                publicIP: netDetailsManager.publicIP,
+                connectionDetailsManager: connectionDetailsManager
             )
             
             Divider()
@@ -59,6 +61,7 @@ struct ContentView: View {
             Task {
                 netStatsManager.refresh()
                 await netDetailsManager.deleteAndGetAddresses()
+                await connectionDetailsManager.refresh()
             }
         } label: {
             Image(systemName: "arrow.trianglehead.counterclockwise")
@@ -82,7 +85,11 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView(netStatsManager: NetworkStatsManager(), netDetailsManager: NetworkDetailsManager())
-        .environmentObject(Settings())
-        .frame(height: 350)
+    ContentView(
+        netStatsManager: NetworkStatsManager(),
+        netDetailsManager: NetworkDetailsManager(),
+        connectionDetailsManager: ConnectionDetailsManager()
+    )
+    .environmentObject(Settings())
+    .frame(height: 350)
 }

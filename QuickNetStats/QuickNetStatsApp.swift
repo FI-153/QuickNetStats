@@ -13,6 +13,7 @@ struct QuickNetStatsApp: App {
     
     @StateObject var netStatsManager: NetworkStatsManager = NetworkStatsManager()
     @StateObject var netDetailsManager: NetworkDetailsManager = NetworkDetailsManager()
+    @StateObject var connectionDetailsManager: ConnectionDetailsManager = ConnectionDetailsManager()
     @StateObject var settings: Settings = Settings()
     
     let notificationDelegate = NotificationDelegate()
@@ -26,7 +27,8 @@ struct QuickNetStatsApp: App {
             content: {
                 ContentView(
                     netStatsManager: netStatsManager,
-                    netDetailsManager: netDetailsManager
+                    netDetailsManager: netDetailsManager,
+                    connectionDetailsManager: connectionDetailsManager
                 )
                 .padding()
                 .frame(width: 550)
