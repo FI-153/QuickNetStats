@@ -220,7 +220,8 @@ class ConnectionDetailsManager: ObservableObject {
     }
 }
 
-#if DEBUG
+// Not #if DEBUG-guarded: #Preview bodies compile in Release too, and the
+// existing mock convention (NetworkStats.mock*) ships unguarded as well.
 extension ConnectionDetailsManager {
     /// Builds a manager pre-populated with static state for SwiftUI previews.
     /// No fetch is performed and the real readers are never consulted.
@@ -236,4 +237,3 @@ extension ConnectionDetailsManager {
         return manager
     }
 }
-#endif
