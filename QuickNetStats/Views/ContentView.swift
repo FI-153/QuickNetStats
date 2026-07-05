@@ -16,7 +16,8 @@ struct ContentView: View {
     @EnvironmentObject var settings: Settings
     
     @Environment(\.openWindow) var openWindow
-    
+    @Environment(\.dismiss) var dismiss
+
     var body: some View {
         VStack(spacing: 0){
             NetStatsView(
@@ -46,6 +47,7 @@ struct ContentView: View {
             
             Button {
                 openWindow(id: "settings-window")
+                dismiss()
             } label: {
                 FooterButtonLabelView(labelText: "Settings", systemName: "gear")
             }
