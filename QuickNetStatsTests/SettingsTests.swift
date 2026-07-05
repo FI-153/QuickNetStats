@@ -5,8 +5,28 @@
 //  Tests for Settings-related enums: raw values and initializers.
 //
 
+import Foundation
 import Testing
 @testable import QuickNetStats
+
+@Suite("Settings Defaults")
+struct SettingsDefaultsTests {
+
+    @Test("keepDetailsExpanded defaults to false")
+    @MainActor
+    func keepDetailsExpandedDefaultsToFalse() {
+        let key = Settings.UserDefaultsKeys.keepDetailsExpanded
+        let savedValue = UserDefaults.standard.object(forKey: key)
+        UserDefaults.standard.removeObject(forKey: key)
+        defer {
+            if let savedValue {
+                UserDefaults.standard.set(savedValue, forKey: key)
+            }
+        }
+
+        #expect(Settings().keepDetailsExpanded == false)
+    }
+}
 
 @Suite("Settings Enums")
 struct SettingsTests {

@@ -24,6 +24,12 @@ struct VisualsView: View {
                     variable: settings.$isColorful,
                     description: "Use colors that change according to the quality of the network"
                 )
+
+                ToggleView(
+                    title: "Keep Details Expanded",
+                    variable: settings.$keepDetailsExpanded,
+                    description: "Keep the Connection Details section expanded after the menu bar closes"
+                )
             } header: {
                 Text("General")
             }

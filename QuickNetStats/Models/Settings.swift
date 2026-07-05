@@ -31,6 +31,7 @@ class Settings: ObservableObject {
         static let showQualityInMenu = "showQualityInMenu"
         static let useAnimations = "useAnimations"
         static let isColorful = "isColorful"
+        static let keepDetailsExpanded = "keepDetailsExpanded"
         static let isNotificationActive = "isNotificationActive"
         static let notifyInternetBehavior = "notifyInternetBehavior"
         static let notifyQualityBehavior = "notifyQualityBehavior"
@@ -48,6 +49,9 @@ class Settings: ObservableObject {
     
     @AppStorage(UserDefaultsKeys.isColorful)
     var isColorful: Bool = true
+
+    @AppStorage(UserDefaultsKeys.keepDetailsExpanded)
+    var keepDetailsExpanded: Bool = false
     
     @AppStorage(UserDefaultsKeys.isNotificationActive)
     var isNotificationActive: Bool = false

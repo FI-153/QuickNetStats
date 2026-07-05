@@ -9,7 +9,7 @@ import SwiftUI
 
 /// The collapsible "Connection Details" dropdown shown below the IP buttons.
 /// Fetches on first expand, stops live polling on collapse and on popover close.
-/// Expansion state is intentionally not persisted: a fresh popover is collapsed.
+/// On popover close the dropdown collapses, unless `Settings.keepDetailsExpanded` is enabled.
 struct ConnectionDetailsView: View {
 
     @ObservedObject var manager: ConnectionDetailsManager
@@ -51,6 +51,9 @@ struct ConnectionDetailsView: View {
         }
         .onDisappear {
             manager.stopLive()
+            if !settings.keepDetailsExpanded {
+                isExpanded = false
+            }
         }
     }
     
