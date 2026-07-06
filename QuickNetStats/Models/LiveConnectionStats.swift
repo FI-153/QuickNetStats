@@ -17,6 +17,11 @@ struct LiveConnectionStats: Equatable {
 
     var downloadBytesPerSec: Double?
     var uploadBytesPerSec: Double?
+    var downloadPacketsPerSec: Double?
+    var uploadPacketsPerSec: Double?
+    /// Combined in + out interface errors per second.
+    var errorsPerSec: Double?
+    var dropsPerSec: Double?
     var rssiDBm: Int?
     var noiseDBm: Int?
     var txRateMbps: Double?
@@ -35,6 +40,10 @@ struct LiveConnectionStats: Equatable {
     var txRateText: String? { txRateMbps.map { ConnectionDetails.linkSpeedText($0) } }
     var downloadText: String? { downloadBytesPerSec.map { Self.rateText($0) } }
     var uploadText: String? { uploadBytesPerSec.map { Self.rateText($0) } }
+    var downloadPacketsText: String? { downloadPacketsPerSec.map { Self.countRateText($0) } }
+    var uploadPacketsText: String? { uploadPacketsPerSec.map { Self.countRateText($0) } }
+    var errorsText: String? { errorsPerSec.map { Self.countRateText($0) } }
+    var dropsText: String? { dropsPerSec.map { Self.countRateText($0) } }
 
     // MARK: - Formatters
 
@@ -53,20 +62,34 @@ struct LiveConnectionStats: Equatable {
         }
     }
 
+    /// Formats a per-second count (packets/errors/drops) as a rounded integer plus
+    /// "/s" ("1234/s"). No thousands separator; sub-1 rates round to the nearest whole.
+    static func countRateText(_ perSec: Double) -> String {
+        "\(Int(perSec.rounded()))/s"
+    }
+
     // MARK: - Mockups
 
-    /// A live Wi-Fi sample with throughput and RF metrics.
+    /// A live Wi-Fi sample with throughput, counters, and RF metrics.
     static let mockLiveWifi = LiveConnectionStats(
         downloadBytesPerSec: 1_200_000,
         uploadBytesPerSec: 340_000,
+        downloadPacketsPerSec: 1_050,
+        uploadPacketsPerSec: 420,
+        errorsPerSec: 0,
+        dropsPerSec: 0,
         rssiDBm: -52,
         noiseDBm: -95,
         txRateMbps: 866
     )
 
-    /// A live wired sample with throughput only.
+    /// A live wired sample with throughput and counters but no RF metrics.
     static let mockLiveWired = LiveConnectionStats(
         downloadBytesPerSec: 8_500_000,
-        uploadBytesPerSec: 1_100_000
+        uploadBytesPerSec: 1_100_000,
+        downloadPacketsPerSec: 7_300,
+        uploadPacketsPerSec: 980,
+        errorsPerSec: 0,
+        dropsPerSec: 1
     )
 }

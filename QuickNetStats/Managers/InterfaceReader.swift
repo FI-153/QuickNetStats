@@ -12,9 +12,16 @@ struct InterfaceSnapshot: Equatable {
     var macAddress: String?      // "aa:bb:cc:dd:ee:ff"
     var mtu: Int?
     var ipv6Address: String?
+    var broadcastAddress: String?
     var linkSpeedMbps: Double?
+    var mediaDescription: String?   // "1000baseT full-duplex"; nil off Ethernet
     var rxBytes: UInt64?
     var txBytes: UInt64?
+    var rxPackets: UInt64?
+    var txPackets: UInt64?
+    var inErrors: UInt64?
+    var outErrors: UInt64?
+    var drops: UInt64?
 }
 
 /// A seam over `getifaddrs`/`sysctl` reads so the manager stays testable.
@@ -44,8 +51,16 @@ struct InterfaceReader: InterfaceReading {
                 switch Int32(addr.pointee.sa_family) {
                 case AF_LINK:
                     Self.readLinkLayer(addr: addr, data: interface.ifa_data, into: &result)
+                case AF_INET:
+                    // On Darwin ifa_dstaddr aliases the broadcast address for
+                    // IFF_BROADCAST interfaces; ignore it otherwise (e.g. p2p links).
+                    if (interface.ifa_flags & UInt32(IFF_BROADCAST)) != 0,
+                       let dst = interface.ifa_dstaddr,
+                       let broadcast = Self.numericHost(from: dst) {
+                        result.broadcastAddress = broadcast
+                    }
                 case AF_INET6:
-                    if let ipv6 = Self.ipv6String(from: addr) {
+                    if let ipv6 = Self.numericHost(from: addr) {
                         ipv6Candidates.append(ipv6)
                     }
                 default:
@@ -55,7 +70,16 @@ struct InterfaceReader: InterfaceReading {
         }
 
         result.ipv6Address = Self.preferredIPv6(from: ipv6Candidates)
-        (result.rxBytes, result.txBytes) = Self.byteCounters(for: bsdName)
+        result.mediaDescription = Self.mediaDescription(for: bsdName)
+        if let counters = Self.counters(for: bsdName) {
+            result.rxBytes = counters.rxBytes
+            result.txBytes = counters.txBytes
+            result.rxPackets = counters.rxPackets
+            result.txPackets = counters.txPackets
+            result.inErrors = counters.inErrors
+            result.outErrors = counters.outErrors
+            result.drops = counters.drops
+        }
         return result
     }
 
@@ -112,8 +136,9 @@ struct InterfaceReader: InterfaceReading {
         }
     }
 
-    /// Formats an `AF_INET6` address as a numeric string, stripping any `%scope`.
-    private static func ipv6String(from addr: UnsafeMutablePointer<sockaddr>) -> String? {
+    /// Formats a `sockaddr` (IPv4 or IPv6) as a numeric string, stripping any
+    /// `%scope` suffix. Works for both `AF_INET` (broadcast) and `AF_INET6` addresses.
+    private static func numericHost(from addr: UnsafeMutablePointer<sockaddr>) -> String? {
         var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
         let status = getnameinfo(
             addr, socklen_t(addr.pointee.sa_len),
@@ -128,29 +153,100 @@ struct InterfaceReader: InterfaceReading {
         return address
     }
 
-    // MARK: - Byte counters
+    // MARK: - Media type
 
-    /// Reads 64-bit rx/tx byte counters via `sysctl NET_RT_IFLIST2` (avoids the
-    /// 32-bit rollover of the `getifaddrs` counters). Returns `(nil, nil)` if the
+    /// Reads the active Ethernet media description for `bsdName` via the
+    /// `SIOCGIFMEDIA` ioctl on a throwaway datagram socket. Returns nil for
+    /// non-Ethernet interfaces, unmapped subtypes, or any ioctl failure — never
+    /// surfaces an error. Wi-Fi links report subtypes outside our table and so
+    /// naturally degrade to nil.
+    private static func mediaDescription(for bsdName: String) -> String? {
+        let sock = socket(AF_INET, SOCK_DGRAM, 0)
+        guard sock >= 0 else { return nil }
+        defer { close(sock) }
+
+        var request = ifmediareq()
+        let copied = bsdName.withCString { source -> Bool in
+            withUnsafeMutablePointer(to: &request.ifm_name) { namePtr in
+                namePtr.withMemoryRebound(to: CChar.self, capacity: Int(IFNAMSIZ)) { dest in
+                    strlcpy(dest, source, Int(IFNAMSIZ)) < Int(IFNAMSIZ)
+                }
+            }
+        }
+        guard copied else { return nil }
+
+        let status = withUnsafeMutablePointer(to: &request) { ptr in
+            ioctl(sock, Self.siocgifmedia, ptr)
+        }
+        guard status >= 0 else { return nil }
+        return mediaDescription(active: request.ifm_active)
+    }
+
+    /// `SIOCGIFMEDIA` request number computed per `<sys/ioccom.h>` `_IOWR('i', 56,
+    /// ifmediareq)`; the macro isn't imported, and using `MemoryLayout.stride` keeps
+    /// the encoded size in step with the kernel's `#pragma pack(4)` layout.
+    private static var siocgifmedia: UInt {
+        let inOut = UInt(IOC_IN) | UInt(IOC_OUT)
+        let size = UInt(MemoryLayout<ifmediareq>.stride & Int(IOCPARM_MASK))
+        return inOut | (size << 16) | (UInt(UInt8(ascii: "i")) << 8) | 56
+    }
+
+    /// Ethernet subtype code → display name for the subtypes we surface.
+    private static let ethernetSubtypeNames: [Int: String] = [
+        Int(IFM_10_T): "10baseT",
+        Int(IFM_100_TX): "100baseTX",
+        Int(IFM_1000_T): "1000baseT",
+        Int(IFM_2500_T): "2500baseT",
+        Int(IFM_5000_T): "5000baseT",
+        Int(IFM_10G_T): "10GbaseT"
+    ]
+
+    /// Maps an `ifmediareq.ifm_active` bitfield to an Ethernet media description
+    /// ("1000baseT full-duplex"); nil for non-Ethernet media or an unmapped subtype.
+    static func mediaDescription(active: Int32) -> String? {
+        let value = Int(active)
+        guard value & Int(IFM_NMASK) == Int(IFM_ETHER) else { return nil }
+        let subtype = value & (Int(IFM_TMASK_COMPAT) | Int(IFM_TMASK_EXT))
+        guard let name = ethernetSubtypeNames[subtype] else { return nil }
+        if value & Int(IFM_FDX) != 0 { return "\(name) full-duplex" }
+        if value & Int(IFM_HDX) != 0 { return "\(name) half-duplex" }
+        return name
+    }
+
+    // MARK: - Counters
+
+    /// The full 64-bit counter set decoded from one `if_data64` record.
+    private struct RawCounters {
+        var rxBytes: UInt64
+        var txBytes: UInt64
+        var rxPackets: UInt64
+        var txPackets: UInt64
+        var inErrors: UInt64
+        var outErrors: UInt64
+        var drops: UInt64
+    }
+
+    /// Reads 64-bit byte/packet/error/drop counters via `sysctl NET_RT_IFLIST2`
+    /// (avoids the 32-bit rollover of the `getifaddrs` counters). Returns nil if the
     /// interface is unknown or the query fails.
-    private static func byteCounters(for bsdName: String) -> (UInt64?, UInt64?) {
+    private static func counters(for bsdName: String) -> RawCounters? {
         let index = if_nametoindex(bsdName)
-        guard index != 0 else { return (nil, nil) }
+        guard index != 0 else { return nil }
 
         var mib: [Int32] = [CTL_NET, PF_ROUTE, 0, 0, NET_RT_IFLIST2, 0]
         var length = 0
         guard sysctl(&mib, u_int(mib.count), nil, &length, nil, 0) == 0, length > 0 else {
-            return (nil, nil)
+            return nil
         }
 
         var buffer = [UInt8](repeating: 0, count: length)
         let success = buffer.withUnsafeMutableBytes { raw in
             sysctl(&mib, u_int(mib.count), raw.baseAddress, &length, nil, 0) == 0
         }
-        guard success else { return (nil, nil) }
+        guard success else { return nil }
 
-        return buffer.withUnsafeBytes { raw -> (UInt64?, UInt64?) in
-            guard let base = raw.baseAddress else { return (nil, nil) }
+        return buffer.withUnsafeBytes { raw -> RawCounters? in
+            guard let base = raw.baseAddress else { return nil }
             var offset = 0
             while offset + MemoryLayout<if_msghdr>.size <= length {
                 let header = base.advanced(by: offset).loadUnaligned(as: if_msghdr.self)
@@ -162,12 +258,21 @@ struct InterfaceReader: InterfaceReading {
                    messageLength >= MemoryLayout<if_msghdr2>.size {
                     let header2 = base.advanced(by: offset).loadUnaligned(as: if_msghdr2.self)
                     if UInt32(header2.ifm_index) == index {
-                        return (header2.ifm_data.ifi_ibytes, header2.ifm_data.ifi_obytes)
+                        let data = header2.ifm_data
+                        return RawCounters(
+                            rxBytes: data.ifi_ibytes,
+                            txBytes: data.ifi_obytes,
+                            rxPackets: data.ifi_ipackets,
+                            txPackets: data.ifi_opackets,
+                            inErrors: data.ifi_ierrors,
+                            outErrors: data.ifi_oerrors,
+                            drops: data.ifi_iqdrops
+                        )
                     }
                 }
                 offset += messageLength
             }
-            return (nil, nil)
+            return nil
         }
     }
 }

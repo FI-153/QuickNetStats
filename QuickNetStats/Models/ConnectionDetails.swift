@@ -29,6 +29,12 @@ struct ConnectionDetails: Equatable {
         var macAddress: String?
         var mtu: Int?
         var linkSpeedMbps: Double?
+        /// Active media type for wired links ("1000baseT full-duplex"); nil off Ethernet.
+        var mediaDescription: String?
+        /// Pre-formatted NWPath capability list ("IPv4 · IPv6 · DNS"); nil when unknown.
+        var supports: String?
+        /// Other usable interfaces beside the primary, e.g. `["Ethernet (en1)"]`.
+        var otherInterfaces: [String] = []
     }
 
     /// Layer-3 addressing for the primary interface.
@@ -38,13 +44,28 @@ struct ConnectionDetails: Equatable {
         var subnetMask: String?
         var routerAddress: String?
         var hostname: String?
+        var ipv6Router: String?
+        var broadcastAddress: String?
+        /// IPv4 configuration method ("DHCP", "Manual", "LinkLocal"…).
+        var ipv4ConfigMethod: String?
+        var computerName: String?
     }
 
     /// Name resolution and DHCP lease information.
     struct DnsDhcp: Equatable {
         var dnsServers: [String] = []
         var searchDomains: [String] = []
+        var dhcpServer: String?
+        var dhcpLeaseStart: Date?
         var dhcpLeaseExpiry: Date?
+    }
+
+    /// Active system proxies for the primary service; each is "host:port" or nil
+    /// when that proxy type is disabled. The whole group's rows vanish when all nil.
+    struct Proxy: Equatable {
+        var httpProxy: String?
+        var httpsProxy: String?
+        var socksProxy: String?
     }
 
     /// Wi-Fi RF/PHY facts; the whole group is `nil` on non-Wi-Fi interfaces.
@@ -53,8 +74,26 @@ struct ConnectionDetails: Equatable {
         var band: String?          // "2.4 GHz" | "5 GHz" | "6 GHz"
         var channelWidthMHz: Int?
         var phyMode: String?       // "802.11ax"
+        var mode: String?          // "Station" | "IBSS" | "Host AP"
+        var txPowerMw: Int?
         var security: String?      // "WPA3 Personal"
         var countryCode: String?
+
+        /// Marketing Wi-Fi generation ("Wi-Fi 6", "Wi-Fi 6E", …) derived from the
+        /// PHY mode and band, both of which come from `WifiReader`'s closed value
+        /// set. `nil` when the PHY mode is unknown/unset, so its row is omitted.
+        var generation: String? {
+            switch phyMode {
+            case "802.11b": return "Wi-Fi 1"
+            case "802.11a": return "Wi-Fi 2"
+            case "802.11g": return "Wi-Fi 3"
+            case "802.11n": return "Wi-Fi 4"
+            case "802.11ac": return "Wi-Fi 5"
+            case "802.11ax": return band == "6 GHz" ? "Wi-Fi 6E" : "Wi-Fi 6"
+            case "802.11be": return "Wi-Fi 7"
+            default: return nil
+            }
+        }
     }
 
     // MARK: - Properties
@@ -62,6 +101,7 @@ struct ConnectionDetails: Equatable {
     var interface = Interface()
     var addressing = Addressing()
     var dnsDhcp = DnsDhcp()
+    var proxy = Proxy()
     var wifi: Wifi?
 
     // MARK: - Computed Rows
@@ -81,6 +121,15 @@ struct ConnectionDetails: Equatable {
         if let speed = interface.linkSpeedMbps {
             rows.append(DetailRow(label: "Link speed", value: Self.linkSpeedText(speed)))
         }
+        if let media = interface.mediaDescription {
+            rows.append(DetailRow(label: "Media", value: media))
+        }
+        if let supports = interface.supports {
+            rows.append(DetailRow(label: "Supports", value: supports))
+        }
+        if !interface.otherInterfaces.isEmpty {
+            rows.append(DetailRow(label: "Also available", value: interface.otherInterfaces.joined(separator: ", ")))
+        }
         return rows
     }
 
@@ -90,8 +139,14 @@ struct ConnectionDetails: Equatable {
         if let router = addressing.routerAddress {
             rows.append(DetailRow(label: "Router", value: router))
         }
+        if let ipv6Router = addressing.ipv6Router {
+            rows.append(DetailRow(label: "Router (IPv6)", value: ipv6Router))
+        }
         if let subnet = addressing.subnetMask {
             rows.append(DetailRow(label: "Subnet mask", value: subnet))
+        }
+        if let broadcast = addressing.broadcastAddress {
+            rows.append(DetailRow(label: "Broadcast", value: broadcast))
         }
         if let ipv6 = addressing.ipv6Address {
             rows.append(DetailRow(label: "IPv6 (local)", value: ipv6))
@@ -99,8 +154,14 @@ struct ConnectionDetails: Equatable {
         if let publicIPv6 = addressing.publicIPv6 {
             rows.append(DetailRow(label: "Public IPv6", value: publicIPv6))
         }
+        if let configMethod = addressing.ipv4ConfigMethod {
+            rows.append(DetailRow(label: "IPv4 config", value: configMethod))
+        }
         if let hostname = addressing.hostname {
             rows.append(DetailRow(label: "Hostname", value: hostname))
+        }
+        if let computerName = addressing.computerName {
+            rows.append(DetailRow(label: "Computer name", value: computerName))
         }
         return rows
     }
@@ -114,11 +175,36 @@ struct ConnectionDetails: Equatable {
         if !dnsDhcp.searchDomains.isEmpty {
             rows.append(DetailRow(label: "Search domains", value: dnsDhcp.searchDomains.joined(separator: ", ")))
         }
+        if let server = dnsDhcp.dhcpServer {
+            rows.append(DetailRow(label: "DHCP server", value: server))
+        }
+        if let start = dnsDhcp.dhcpLeaseStart {
+            rows.append(DetailRow(
+                label: "Lease started",
+                value: start.formatted(date: .abbreviated, time: .shortened)
+            ))
+        }
         if let lease = dnsDhcp.dhcpLeaseExpiry {
             rows.append(DetailRow(
                 label: "DHCP lease expires",
                 value: lease.formatted(date: .abbreviated, time: .shortened)
             ))
+        }
+        return rows
+    }
+
+    /// Proxy group rows in HTTP/HTTPS/SOCKS order; nil proxies are omitted, so an
+    /// all-nil `Proxy` yields `[]` and the group never renders (existing convention).
+    var proxyRows: [DetailRow] {
+        var rows: [DetailRow] = []
+        if let http = proxy.httpProxy {
+            rows.append(DetailRow(label: "HTTP", value: http))
+        }
+        if let https = proxy.httpsProxy {
+            rows.append(DetailRow(label: "HTTPS", value: https))
+        }
+        if let socks = proxy.socksProxy {
+            rows.append(DetailRow(label: "SOCKS", value: socks))
         }
         return rows
     }
@@ -132,6 +218,15 @@ struct ConnectionDetails: Equatable {
         }
         if let phy = wifi.phyMode {
             rows.append(DetailRow(label: "PHY mode", value: phy))
+        }
+        if let generation = wifi.generation {
+            rows.append(DetailRow(label: "Generation", value: generation))
+        }
+        if let mode = wifi.mode {
+            rows.append(DetailRow(label: "Mode", value: mode))
+        }
+        if let txPower = wifi.txPowerMw {
+            rows.append(DetailRow(label: "Tx power", value: "\(txPower) mW"))
         }
         if let security = wifi.security {
             rows.append(DetailRow(label: "Security", value: security))
@@ -187,25 +282,36 @@ struct ConnectionDetails: Equatable {
             displayName: "Wi-Fi",
             macAddress: "a4:83:e7:1a:2b:3c",
             mtu: 1500,
-            linkSpeedMbps: 866
+            linkSpeedMbps: 866,
+            supports: "IPv4 · IPv6 · DNS",
+            otherInterfaces: ["Ethernet (en5)"]
         ),
         addressing: .init(
             ipv6Address: "2a00:1450:4009:82b::200e",
             publicIPv6: "2a01:e11:1234:5678::1",
             subnetMask: "255.255.255.0",
             routerAddress: "192.168.1.1",
-            hostname: "Federicos-MacBook-Pro"
+            hostname: "Federicos-MacBook-Pro",
+            ipv6Router: "fe80::1",
+            broadcastAddress: "192.168.1.255",
+            ipv4ConfigMethod: "DHCP",
+            computerName: "Federico's MacBook Pro"
         ),
         dnsDhcp: .init(
             dnsServers: ["192.168.1.1", "1.1.1.1"],
             searchDomains: ["home"],
+            dhcpServer: "192.168.1.1",
+            dhcpLeaseStart: Date().addingTimeInterval(-3_600),
             dhcpLeaseExpiry: Date().addingTimeInterval(86_400)
         ),
+        proxy: .init(httpProxy: "proxy.local:8080", httpsProxy: "proxy.local:8080"),
         wifi: .init(
             channelNumber: 44,
             band: "5 GHz",
             channelWidthMHz: 80,
             phyMode: "802.11ax",
+            mode: "Station",
+            txPowerMw: 100,
             security: "WPA3 Personal",
             countryCode: "IT"
         )
@@ -218,17 +324,26 @@ struct ConnectionDetails: Equatable {
             displayName: "Ethernet",
             macAddress: "a4:83:e7:44:55:66",
             mtu: 1500,
-            linkSpeedMbps: 1000
+            linkSpeedMbps: 1000,
+            mediaDescription: "1000baseT full-duplex",
+            supports: "IPv4 · IPv6 · DNS",
+            otherInterfaces: ["Wi-Fi (en0)"]
         ),
         addressing: .init(
             ipv6Address: "2a00:1450:4009:82b::abcd",
             subnetMask: "255.255.255.0",
             routerAddress: "192.168.1.1",
-            hostname: "Federicos-MacBook-Pro"
+            hostname: "Federicos-MacBook-Pro",
+            ipv6Router: "fe80::abcd",
+            broadcastAddress: "192.168.1.255",
+            ipv4ConfigMethod: "Manual",
+            computerName: "Federico's MacBook Pro"
         ),
         dnsDhcp: .init(
             dnsServers: ["192.168.1.1"],
             searchDomains: ["home"],
+            dhcpServer: "192.168.1.1",
+            dhcpLeaseStart: Date().addingTimeInterval(-3_600),
             dhcpLeaseExpiry: Date().addingTimeInterval(86_400)
         ),
         wifi: nil

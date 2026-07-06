@@ -59,6 +59,42 @@ struct LiveConnectionStatsTests {
         #expect(stats.uploadText == "340.0 KB/s")
     }
 
+    // MARK: - Packet / error / drop rates
+
+    @Test("countRateText rounds to a whole integer and appends /s", arguments: [
+        (0.0, "0/s"),
+        (0.4, "0/s"),
+        (0.6, "1/s"),
+        (1_234.0, "1234/s"),
+        (1_234.7, "1235/s")
+    ])
+    func countRateTextRounds(input: Double, expected: String) {
+        #expect(LiveConnectionStats.countRateText(input) == expected)
+    }
+
+    @Test("packet/error/drop text fields use the integer-rate formatter")
+    func counterText() {
+        let stats = LiveConnectionStats(
+            downloadPacketsPerSec: 1_234,
+            uploadPacketsPerSec: 56,
+            errorsPerSec: 0,
+            dropsPerSec: 2
+        )
+        #expect(stats.downloadPacketsText == "1234/s")
+        #expect(stats.uploadPacketsText == "56/s")
+        #expect(stats.errorsText == "0/s")
+        #expect(stats.dropsText == "2/s")
+    }
+
+    @Test("packet/error/drop text fields are nil when values are missing")
+    func counterTextNil() {
+        let stats = LiveConnectionStats()
+        #expect(stats.downloadPacketsText == nil)
+        #expect(stats.uploadPacketsText == nil)
+        #expect(stats.errorsText == nil)
+        #expect(stats.dropsText == nil)
+    }
+
     // MARK: - rateText boundaries
 
     @Test("rateText formats bytes per second across magnitude boundaries", arguments: [
@@ -79,17 +115,23 @@ struct LiveConnectionStatsTests {
         let mock = LiveConnectionStats.mockLiveWifi
         #expect(mock.downloadBytesPerSec != nil)
         #expect(mock.uploadBytesPerSec != nil)
+        #expect(mock.downloadPacketsPerSec != nil)
+        #expect(mock.uploadPacketsPerSec != nil)
+        #expect(mock.errorsPerSec != nil)
+        #expect(mock.dropsPerSec != nil)
         #expect(mock.rssiDBm != nil)
         #expect(mock.noiseDBm != nil)
         #expect(mock.txRateMbps != nil)
         #expect(mock.snrDB != nil)
     }
 
-    @Test("mockLiveWired has throughput only")
+    @Test("mockLiveWired has throughput and counters but no RF")
     func mockWiredPopulated() {
         let mock = LiveConnectionStats.mockLiveWired
         #expect(mock.downloadBytesPerSec != nil)
         #expect(mock.uploadBytesPerSec != nil)
+        #expect(mock.downloadPacketsPerSec != nil)
+        #expect(mock.uploadPacketsPerSec != nil)
         #expect(mock.rssiDBm == nil)
         #expect(mock.noiseDBm == nil)
         #expect(mock.txRateMbps == nil)

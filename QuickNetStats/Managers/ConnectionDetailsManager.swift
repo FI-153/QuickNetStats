@@ -29,21 +29,27 @@ class ConnectionDetailsManager: ObservableObject {
     private let systemConfig: SystemConfigReading
     private let interfaceReader: InterfaceReading
     private let wifiReader: WifiReading
+    private let pathReader: PathReading
     private let session: URLSession
     private let pollInterval: TimeInterval
 
     /// The running poll loop, if any.
     private var liveTask: Task<Void, Never>?
 
-    /// A byte-counter sample taken at a point in time, used to compute deltas.
-    private struct ByteSample {
-        let rx: UInt64
-        let tx: UInt64
+    /// A full counter sample taken at a point in time, used to compute per-second
+    /// deltas for throughput, packet, error, and drop rates.
+    private struct CounterSample {
+        let rxBytes: UInt64
+        let txBytes: UInt64
+        let rxPackets: UInt64
+        let txPackets: UInt64
+        let errors: UInt64      // combined in + out
+        let drops: UInt64
         let at: Date
     }
 
-    /// The previous throughput sample, used to compute per-second deltas.
-    private var previousSample: ByteSample?
+    /// The previous counter sample, used to compute per-second deltas.
+    private var previousSample: CounterSample?
 
     // MARK: - Initializer
 
@@ -51,25 +57,30 @@ class ConnectionDetailsManager: ObservableObject {
         systemConfig: SystemConfigReading = SystemConfigReader(),
         interfaceReader: InterfaceReading = InterfaceReader(),
         wifiReader: WifiReading = WifiReader(),
+        pathReader: PathReading = PathReader(),
         session: URLSession = .reachabilitySession,
         pollInterval: TimeInterval = 1.0
     ) {
         self.systemConfig = systemConfig
         self.interfaceReader = interfaceReader
         self.wifiReader = wifiReader
+        self.pathReader = pathReader
         self.session = session
         self.pollInterval = pollInterval
     }
 
     // MARK: - Fetch
 
-    /// Reads all three readers plus the public IPv6 lookup and publishes one
-    /// assembled `ConnectionDetails`. Called on first expand and by `refresh()`.
+    /// Reads all four readers (system config, interface, Wi-Fi, path) plus the
+    /// public IPv6 lookup and publishes one assembled `ConnectionDetails`. Called on
+    /// first expand and by `refresh()`.
     func fetchDetails() async {
         let scSnapshot = systemConfig.snapshot()
 
-        // Fetch the public IPv6 concurrently with the local (synchronous) reads.
+        // Fetch the public IPv6 and the one-shot NWPath concurrently with the
+        // local (synchronous) reads.
         async let publicIPv6 = fetchPublicIPv6()
+        async let pathSnapshot = pathReader.snapshot(excluding: scSnapshot.primaryInterface)
 
         var interfaceSnapshot = InterfaceSnapshot()
         var wifiSnapshot: WifiSnapshot?
@@ -79,6 +90,7 @@ class ConnectionDetailsManager: ObservableObject {
         }
 
         let resolvedPublicIPv6 = await publicIPv6
+        let resolvedPath = await pathSnapshot
 
         // A cancelled fetch (popover closed mid-expand) must not publish a
         // half-fetched snapshot: `details != nil` would block the retry on the
@@ -91,22 +103,50 @@ class ConnectionDetailsManager: ObservableObject {
                 displayName: scSnapshot.primaryInterfaceDisplayName,
                 macAddress: interfaceSnapshot.macAddress,
                 mtu: interfaceSnapshot.mtu,
-                linkSpeedMbps: interfaceSnapshot.linkSpeedMbps
+                linkSpeedMbps: interfaceSnapshot.linkSpeedMbps,
+                mediaDescription: interfaceSnapshot.mediaDescription,
+                supports: Self.supportsText(resolvedPath),
+                otherInterfaces: resolvedPath.otherInterfaces
             ),
             addressing: .init(
                 ipv6Address: interfaceSnapshot.ipv6Address,
                 publicIPv6: resolvedPublicIPv6,
                 subnetMask: scSnapshot.subnetMask,
                 routerAddress: scSnapshot.routerAddress,
-                hostname: scSnapshot.hostname
+                hostname: scSnapshot.hostname,
+                ipv6Router: scSnapshot.ipv6Router,
+                broadcastAddress: interfaceSnapshot.broadcastAddress,
+                ipv4ConfigMethod: scSnapshot.ipv4ConfigMethod,
+                computerName: scSnapshot.computerName
             ),
             dnsDhcp: .init(
                 dnsServers: scSnapshot.dnsServers,
                 searchDomains: scSnapshot.searchDomains,
+                dhcpServer: scSnapshot.dhcpServer,
+                dhcpLeaseStart: scSnapshot.dhcpLeaseStart,
                 dhcpLeaseExpiry: scSnapshot.dhcpLeaseExpiry
+            ),
+            proxy: .init(
+                httpProxy: scSnapshot.proxies.http,
+                httpsProxy: scSnapshot.proxies.https,
+                socksProxy: scSnapshot.proxies.socks
             ),
             wifi: wifiSnapshot.map(Self.wifiGroup)
         )
+    }
+
+    /// Composes the NWPath capability list ("IPv4 · IPv6 · DNS") from a path
+    /// snapshot: only flags that are `true` are listed; all-false yields "None";
+    /// all-nil (an empty/timed-out snapshot) yields nil so the row is omitted.
+    static func supportsText(_ path: PathSnapshot) -> String? {
+        let flags: [(Bool?, String)] = [
+            (path.supportsIPv4, "IPv4"),
+            (path.supportsIPv6, "IPv6"),
+            (path.supportsDNS, "DNS")
+        ]
+        guard flags.contains(where: { $0.0 != nil }) else { return nil }
+        let enabled = flags.compactMap { flag, label in flag == true ? label : nil }
+        return enabled.isEmpty ? "None" : enabled.joined(separator: " · ")
     }
 
     /// Re-fetches the static details, but only once the dropdown has been opened
@@ -143,8 +183,9 @@ class ConnectionDetailsManager: ObservableObject {
         previousSample = nil
     }
 
-    /// Reads one live sample: byte counters (→ throughput vs the previous tick)
-    /// and the Wi-Fi RF snapshot. Guards on a known primary interface.
+    /// Reads one live sample: byte/packet/error/drop counters (→ per-second rates
+    /// vs the previous tick) and the Wi-Fi RF snapshot. Guards on a known primary
+    /// interface. Rates stay nil until a second sample exists.
     private func tick() {
         guard let bsdName = details?.interface.bsdName else { return }
 
@@ -152,29 +193,50 @@ class ConnectionDetailsManager: ObservableObject {
         let wifiSnapshot = wifiReader.snapshot(for: bsdName)
 
         let now = Date()
-        var download: Double?
-        var upload: Double?
-        if let previous = previousSample,
-           let rx = interfaceSnapshot.rxBytes,
-           let tx = interfaceSnapshot.txBytes {
+        let current = Self.counterSample(from: interfaceSnapshot, at: now)
+
+        var download, upload, downloadPackets, uploadPackets, errors, drops: Double?
+        if let previous = previousSample, let current {
             let elapsed = now.timeIntervalSince(previous.at)
-            download = Self.bytesPerSecond(previous: previous.rx, current: rx, elapsed: elapsed)
-            upload = Self.bytesPerSecond(previous: previous.tx, current: tx, elapsed: elapsed)
+            download = Self.bytesPerSecond(previous: previous.rxBytes, current: current.rxBytes, elapsed: elapsed)
+            upload = Self.bytesPerSecond(previous: previous.txBytes, current: current.txBytes, elapsed: elapsed)
+            downloadPackets = Self.bytesPerSecond(previous: previous.rxPackets, current: current.rxPackets, elapsed: elapsed)
+            uploadPackets = Self.bytesPerSecond(previous: previous.txPackets, current: current.txPackets, elapsed: elapsed)
+            errors = Self.bytesPerSecond(previous: previous.errors, current: current.errors, elapsed: elapsed)
+            drops = Self.bytesPerSecond(previous: previous.drops, current: current.drops, elapsed: elapsed)
         }
-        if let rx = interfaceSnapshot.rxBytes, let tx = interfaceSnapshot.txBytes {
-            previousSample = ByteSample(rx: rx, tx: tx, at: now)
-        }
+        if let current { previousSample = current }
 
         liveStats = LiveConnectionStats(
             downloadBytesPerSec: download,
             uploadBytesPerSec: upload,
+            downloadPacketsPerSec: downloadPackets,
+            uploadPacketsPerSec: uploadPackets,
+            errorsPerSec: errors,
+            dropsPerSec: drops,
             rssiDBm: wifiSnapshot?.rssiDBm,
             noiseDBm: wifiSnapshot?.noiseDBm,
             txRateMbps: wifiSnapshot?.txRateMbps
         )
     }
 
-    /// Computes a per-second byte rate from two counter samples. Returns nil on a
+    /// Builds a `CounterSample` from an interface snapshot, or nil if any counter
+    /// is missing (all come from the same `if_data64` read, so it is all-or-nothing).
+    private static func counterSample(from snapshot: InterfaceSnapshot, at date: Date) -> CounterSample? {
+        guard let rxBytes = snapshot.rxBytes, let txBytes = snapshot.txBytes,
+              let rxPackets = snapshot.rxPackets, let txPackets = snapshot.txPackets,
+              let inErrors = snapshot.inErrors, let outErrors = snapshot.outErrors,
+              let drops = snapshot.drops else {
+            return nil
+        }
+        return CounterSample(
+            rxBytes: rxBytes, txBytes: txBytes,
+            rxPackets: rxPackets, txPackets: txPackets,
+            errors: inErrors &+ outErrors, drops: drops, at: date
+        )
+    }
+
+    /// Computes a per-second rate from two counter samples. Returns nil on a
     /// non-positive elapsed time or a counter reset (current < previous).
     static func bytesPerSecond(previous: UInt64, current: UInt64, elapsed: TimeInterval) -> Double? {
         guard elapsed > 0, current >= previous else { return nil }
@@ -190,6 +252,8 @@ class ConnectionDetailsManager: ObservableObject {
             band: snapshot.band,
             channelWidthMHz: snapshot.channelWidthMHz,
             phyMode: snapshot.phyMode,
+            mode: snapshot.interfaceMode,
+            txPowerMw: snapshot.txPowerMw,
             security: snapshot.security,
             countryCode: snapshot.countryCode
         )

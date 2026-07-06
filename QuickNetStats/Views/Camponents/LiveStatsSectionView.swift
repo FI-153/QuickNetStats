@@ -39,6 +39,11 @@ struct LiveStatsSectionView: View {
             Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 4) {
                 liveRow("Download", stats?.downloadText)
                 liveRow("Upload", stats?.uploadText)
+                // Packet/error/drop counters are interface-agnostic, like throughput.
+                liveRow("Packets ↓", stats?.downloadPacketsText)
+                liveRow("Packets ↑", stats?.uploadPacketsText)
+                liveRow("Errors", stats?.errorsText)
+                liveRow("Drops", stats?.dropsText)
 
                 if showsWifiRows {
                     liveRow("RSSI", stats?.rssiText)

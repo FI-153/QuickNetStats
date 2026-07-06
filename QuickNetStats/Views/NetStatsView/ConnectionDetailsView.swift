@@ -27,6 +27,10 @@ struct ConnectionDetailsView: View {
                     DetailGroupView(title: "Addressing", rows: details.addressingRows)
                     Divider()
                     DetailGroupView(title: "DNS & DHCP", rows: details.dnsDhcpRows)
+                    if !details.proxyRows.isEmpty {
+                        Divider()
+                        DetailGroupView(title: "Proxy", rows: details.proxyRows)
+                    }
                     Divider()
                     DetailGroupView(title: "Wi-Fi", rows: details.wifiRows)
                     Divider()

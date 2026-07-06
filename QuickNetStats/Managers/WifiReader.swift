@@ -14,6 +14,8 @@ struct WifiSnapshot: Equatable {
     var band: String?
     var channelWidthMHz: Int?
     var phyMode: String?
+    var interfaceMode: String?   // "Station" | "IBSS" | "Host AP"
+    var txPowerMw: Int?
     var security: String?
     var countryCode: String?
     var rssiDBm: Int?
@@ -51,8 +53,13 @@ struct WifiReader: WifiReading {
         }
 
         snapshot.phyMode = Self.phyModeText(interface.activePHYMode().rawValue)
+        snapshot.interfaceMode = Self.modeText(interface.interfaceMode().rawValue)
         snapshot.security = Self.securityText(interface.security().rawValue)
         snapshot.countryCode = interface.countryCode()
+
+        // CoreWLAN reports 0 mW when transmit power is unavailable; treat as nil.
+        let txPower = interface.transmitPower()
+        snapshot.txPowerMw = txPower > 0 ? txPower : nil
 
         // CoreWLAN reports 0 dBm when RSSI/noise are unavailable; treat as nil.
         let rssi = interface.rssiValue()
@@ -86,6 +93,16 @@ struct WifiReader: WifiReading {
         case 3: return 80
         case 4: return 160
         default: return nil          // kCWChannelWidthUnknown (0) and future values
+        }
+    }
+
+    /// Maps `CWInterfaceMode` raw values to a display string; none (0)/future → nil.
+    static func modeText(_ rawValue: Int) -> String? {
+        switch rawValue {
+        case 1: return "Station"
+        case 2: return "IBSS"
+        case 3: return "Host AP"
+        default: return nil          // kCWInterfaceModeNone (0) and future values
         }
     }
 
