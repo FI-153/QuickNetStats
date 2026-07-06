@@ -54,7 +54,7 @@ struct AboutView: View {
                     Text("BETA")
                         .font(.caption)
                         .fontWeight(.bold)
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(.orange)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(.tint.opacity(0.15), in: Capsule())

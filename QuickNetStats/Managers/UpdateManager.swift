@@ -12,7 +12,7 @@ struct GitHubRelease: Decodable {
     let tagName: String
     let htmlUrl: String
     
-    enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey { 
         case tagName = "tag_name"
         case htmlUrl = "html_url"
     }
