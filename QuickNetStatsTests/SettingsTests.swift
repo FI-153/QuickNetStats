@@ -26,6 +26,66 @@ struct SettingsDefaultsTests {
 
         #expect(Settings().keepDetailsExpanded == false)
     }
+
+    @Test("interfaceRateUnit defaults to bits per second")
+    @MainActor
+    func interfaceRateUnitDefaultsToBits() {
+        let key = Settings.UserDefaultsKeys.interfaceRateUnit
+        let savedValue = UserDefaults.standard.object(forKey: key)
+        UserDefaults.standard.removeObject(forKey: key)
+        defer {
+            if let savedValue {
+                UserDefaults.standard.set(savedValue, forKey: key)
+            }
+        }
+
+        #expect(Settings().interfaceRateUnit == .bitsPerSecond)
+    }
+
+    @Test("wifiRateUnit defaults to bits per second")
+    @MainActor
+    func wifiRateUnitDefaultsToBits() {
+        let key = Settings.UserDefaultsKeys.wifiRateUnit
+        let savedValue = UserDefaults.standard.object(forKey: key)
+        UserDefaults.standard.removeObject(forKey: key)
+        defer {
+            if let savedValue {
+                UserDefaults.standard.set(savedValue, forKey: key)
+            }
+        }
+
+        #expect(Settings().wifiRateUnit == .bitsPerSecond)
+    }
+
+    @Test("liveRateUnit defaults to bytes per second")
+    @MainActor
+    func liveRateUnitDefaultsToBytes() {
+        let key = Settings.UserDefaultsKeys.liveRateUnit
+        let savedValue = UserDefaults.standard.object(forKey: key)
+        UserDefaults.standard.removeObject(forKey: key)
+        defer {
+            if let savedValue {
+                UserDefaults.standard.set(savedValue, forKey: key)
+            }
+        }
+
+        #expect(Settings().liveRateUnit == .bytesPerSecond)
+    }
+
+    @Test("startLiveMonitoringOnOpen defaults to false")
+    @MainActor
+    func startLiveMonitoringOnOpenDefaultsToFalse() {
+        let key = Settings.UserDefaultsKeys.startLiveMonitoringOnOpen
+        let savedValue = UserDefaults.standard.object(forKey: key)
+        UserDefaults.standard.removeObject(forKey: key)
+        defer {
+            if let savedValue {
+                UserDefaults.standard.set(savedValue, forKey: key)
+            }
+        }
+
+        #expect(Settings().startLiveMonitoringOnOpen == false)
+    }
 }
 
 @Suite("Settings Enums")

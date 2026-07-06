@@ -16,6 +16,10 @@ struct LiveStatsSectionView: View {
     let isLive: Bool
     let showsWifiRows: Bool
     let stats: LiveConnectionStats?
+    /// Unit family for the Download/Upload throughput rows.
+    let liveUnit: RateUnit
+    /// Unit family for the Wi-Fi Tx-rate row.
+    let wifiRateUnit: RateUnit
     let onToggle: () -> Void
 
     var body: some View {
@@ -37,8 +41,8 @@ struct LiveStatsSectionView: View {
             .font(.title2)
 
             Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 4) {
-                liveRow("Download", stats?.downloadText)
-                liveRow("Upload", stats?.uploadText)
+                liveRow("Download", stats?.downloadText(in: liveUnit))
+                liveRow("Upload", stats?.uploadText(in: liveUnit))
                 // Packet/error/drop counters are interface-agnostic, like throughput.
                 liveRow("Packets ↓", stats?.downloadPacketsText)
                 liveRow("Packets ↑", stats?.uploadPacketsText)
@@ -49,7 +53,7 @@ struct LiveStatsSectionView: View {
                     liveRow("RSSI", stats?.rssiText)
                     liveRow("Noise", stats?.noiseText)
                     liveRow("SNR", stats?.snrText)
-                    liveRow("Tx rate", stats?.txRateText)
+                    liveRow("Tx rate", stats?.txRateText(in: wifiRateUnit))
                 }
             }
         }
@@ -75,9 +79,16 @@ struct LiveStatsSectionView: View {
 // MARK: - Previews
 
 #Preview("Idle Wi-Fi") {
-    LiveStatsSectionView(isLive: false, showsWifiRows: true, stats: nil, onToggle: {})
-        .padding()
-        .frame(width: 300)
+    LiveStatsSectionView(
+        isLive: false,
+        showsWifiRows: true,
+        stats: nil,
+        liveUnit: .bytesPerSecond,
+        wifiRateUnit: .bitsPerSecond,
+        onToggle: {}
+    )
+    .padding()
+    .frame(width: 300)
 }
 
 #Preview("Live Wi-Fi") {
@@ -85,6 +96,8 @@ struct LiveStatsSectionView: View {
         isLive: true,
         showsWifiRows: true,
         stats: .mockLiveWifi,
+        liveUnit: .bytesPerSecond,
+        wifiRateUnit: .bitsPerSecond,
         onToggle: {}
     )
     .padding()
@@ -96,6 +109,8 @@ struct LiveStatsSectionView: View {
         isLive: true,
         showsWifiRows: false,
         stats: .mockLiveWired,
+        liveUnit: .bytesPerSecond,
+        wifiRateUnit: .bitsPerSecond,
         onToggle: {}
     )
     .padding()

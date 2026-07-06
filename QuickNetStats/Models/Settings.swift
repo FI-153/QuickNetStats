@@ -36,6 +36,10 @@ class Settings: ObservableObject {
         static let notifyInternetBehavior = "notifyInternetBehavior"
         static let notifyQualityBehavior = "notifyQualityBehavior"
         static let notifyInterfaceChanges = "notifyInterfaceChanges"
+        static let interfaceRateUnit = "interfaceRateUnit"
+        static let wifiRateUnit = "wifiRateUnit"
+        static let liveRateUnit = "liveRateUnit"
+        static let startLiveMonitoringOnOpen = "startLiveMonitoringOnOpen"
     }
     
     @AppStorage(UserDefaultsKeys.showSummaryInMenu)
@@ -72,5 +76,20 @@ class Settings: ObservableObject {
     
     @AppStorage(UserDefaultsKeys.notifyInterfaceChanges)
     var notifyInterfaceChanges: Bool = false
+
+    /// Display unit for the Interface "Link speed" row. Defaults to the native bits family.
+    @AppStorage(UserDefaultsKeys.interfaceRateUnit)
+    var interfaceRateUnit: RateUnit = .bitsPerSecond
+
+    /// Display unit for the Wi-Fi "Tx rate" row. Defaults to the native bits family.
+    @AppStorage(UserDefaultsKeys.wifiRateUnit)
+    var wifiRateUnit: RateUnit = .bitsPerSecond
+
+    /// Display unit for the Live "Download"/"Upload" rows. Defaults to the native bytes family.
+    @AppStorage(UserDefaultsKeys.liveRateUnit)
+    var liveRateUnit: RateUnit = .bytesPerSecond
+    
+    @AppStorage(UserDefaultsKeys.startLiveMonitoringOnOpen)
+    var startLiveMonitoringOnOpen: Bool = false
 
 }

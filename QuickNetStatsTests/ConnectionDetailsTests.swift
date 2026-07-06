@@ -74,6 +74,20 @@ struct ConnectionDetailsTests {
         #expect(value("Link speed", in: details.interfaceRows) == "2.5 Gbps")
     }
 
+    // MARK: - Link speed units
+
+    @Test("Link speed row defaults to bits (native Mbps/Gbps)")
+    func linkSpeedDefaultsToBits() {
+        let details = ConnectionDetails(interface: .init(linkSpeedMbps: 210))
+        #expect(value("Link speed", in: details.interfaceRows(rateUnit: .bitsPerSecond)) == "210 Mbps")
+    }
+
+    @Test("Link speed row converts to bytes when requested")
+    func linkSpeedInBytes() {
+        let details = ConnectionDetails(interface: .init(linkSpeedMbps: 210))
+        #expect(value("Link speed", in: details.interfaceRows(rateUnit: .bytesPerSecond)) == "26.25 MB/s")
+    }
+
     @Test("Media, Supports, and Also available rows follow Link speed in order")
     func interfaceExtraRowsOrder() {
         let details = ConnectionDetails(

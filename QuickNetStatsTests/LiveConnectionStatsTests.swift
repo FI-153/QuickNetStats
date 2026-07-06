@@ -59,6 +59,49 @@ struct LiveConnectionStatsTests {
         #expect(stats.uploadText == "340.0 KB/s")
     }
 
+    // MARK: - Parameterized rate text (units)
+
+    @Test("downloadText(in:) keeps the native byte format and converts to bits")
+    func downloadTextUnits() {
+        let stats = LiveConnectionStats(downloadBytesPerSec: 1_200_000)
+        #expect(stats.downloadText(in: .bytesPerSecond) == "1.2 MB/s")
+        #expect(stats.downloadText(in: .bitsPerSecond) == "9.6 Mbps")
+    }
+
+    @Test("uploadText(in:) keeps the native byte format and converts to bits")
+    func uploadTextUnits() {
+        let stats = LiveConnectionStats(uploadBytesPerSec: 340_000)
+        #expect(stats.uploadText(in: .bytesPerSecond) == "340.0 KB/s")
+        #expect(stats.uploadText(in: .bitsPerSecond) == "2.72 Mbps")
+    }
+
+    @Test("txRateText(in:) keeps the native bit format and converts to bytes")
+    func txRateTextUnits() {
+        let stats = LiveConnectionStats(txRateMbps: 210)
+        #expect(stats.txRateText(in: .bitsPerSecond) == "210 Mbps")
+        #expect(stats.txRateText(in: .bytesPerSecond) == "26.25 MB/s")
+    }
+
+    @Test("parameterized text funcs stay nil when their value is missing")
+    func parameterizedTextNil() {
+        let stats = LiveConnectionStats()
+        #expect(stats.downloadText(in: .bitsPerSecond) == nil)
+        #expect(stats.uploadText(in: .bytesPerSecond) == nil)
+        #expect(stats.txRateText(in: .bitsPerSecond) == nil)
+    }
+
+    @Test("existing computed text properties stay in their native unit")
+    func nativeComputedPropertiesUnchanged() {
+        let stats = LiveConnectionStats(
+            downloadBytesPerSec: 340_000,
+            uploadBytesPerSec: 340_000,
+            txRateMbps: 210
+        )
+        #expect(stats.downloadText == "340.0 KB/s")
+        #expect(stats.uploadText == "340.0 KB/s")
+        #expect(stats.txRateText == "210 Mbps")
+    }
+
     // MARK: - Packet / error / drop rates
 
     @Test("countRateText rounds to a whole integer and appends /s", arguments: [

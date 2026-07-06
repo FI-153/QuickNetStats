@@ -22,7 +22,7 @@ struct ConnectionDetailsView: View {
             
             if isExpanded {
                 if let details = manager.details {
-                    DetailGroupView(title: "Interface", rows: details.interfaceRows)
+                    DetailGroupView(title: "Interface", rows: details.interfaceRows(rateUnit: settings.interfaceRateUnit))
                     Divider()
                     DetailGroupView(title: "Addressing", rows: details.addressingRows)
                     Divider()
@@ -38,6 +38,8 @@ struct ConnectionDetailsView: View {
                         isLive: manager.isLive,
                         showsWifiRows: details.wifi != nil,
                         stats: manager.liveStats,
+                        liveUnit: settings.liveRateUnit,
+                        wifiRateUnit: settings.wifiRateUnit,
                         onToggle: { manager.isLive ? manager.stopLive() : manager.startLive() }
                     )
                 } else {
@@ -51,6 +53,11 @@ struct ConnectionDetailsView: View {
         .task(id: isExpanded) {
             if isExpanded && manager.details == nil {
                 await manager.fetchDetails()
+            }
+            // Auto-start Live Stats on expand when the user opted in; startLive()
+            // itself no-ops if polling is already running.
+            if isExpanded && settings.startLiveMonitoringOnOpen {
+                manager.startLive()
             }
         }
         .onDisappear {

@@ -37,13 +37,30 @@ struct LiveConnectionStats: Equatable {
     var rssiText: String? { rssiDBm.map { "\($0) dBm" } }
     var noiseText: String? { noiseDBm.map { "\($0) dBm" } }
     var snrText: String? { snrDB.map { "\($0) dB" } }
-    var txRateText: String? { txRateMbps.map { ConnectionDetails.linkSpeedText($0) } }
-    var downloadText: String? { downloadBytesPerSec.map { Self.rateText($0) } }
-    var uploadText: String? { uploadBytesPerSec.map { Self.rateText($0) } }
+    var txRateText: String? { txRateText(in: .bitsPerSecond) }
+    var downloadText: String? { downloadText(in: .bytesPerSecond) }
+    var uploadText: String? { uploadText(in: .bytesPerSecond) }
     var downloadPacketsText: String? { downloadPacketsPerSec.map { Self.countRateText($0) } }
     var uploadPacketsText: String? { uploadPacketsPerSec.map { Self.countRateText($0) } }
     var errorsText: String? { errorsPerSec.map { Self.countRateText($0) } }
     var dropsText: String? { dropsPerSec.map { Self.countRateText($0) } }
+
+    // MARK: - Unit-aware text
+
+    /// Wi-Fi Tx rate formatted in `unit` (native bits). `nil` when unmeasured.
+    func txRateText(in unit: RateUnit) -> String? {
+        txRateMbps.map { ConnectionDetails.linkSpeedText($0, in: unit) }
+    }
+
+    /// Download throughput formatted in `unit` (native bytes). `nil` when unmeasured.
+    func downloadText(in unit: RateUnit) -> String? {
+        downloadBytesPerSec.map { Self.rateText($0, in: unit) }
+    }
+
+    /// Upload throughput formatted in `unit` (native bytes). `nil` when unmeasured.
+    func uploadText(in unit: RateUnit) -> String? {
+        uploadBytesPerSec.map { Self.rateText($0, in: unit) }
+    }
 
     // MARK: - Formatters
 
@@ -59,6 +76,18 @@ struct LiveConnectionStats: Equatable {
             return String(format: "%.1f MB/s", bytesPerSec / 1_000_000)
         } else {
             return String(format: "%.1f GB/s", bytesPerSec / 1_000_000_000)
+        }
+    }
+
+    /// Formats a byte-per-second rate, displayed in `unit`. The native bytes unit keeps
+    /// the historical `rateText(_:)` output byte-for-byte; the bits unit routes through
+    /// `DataRate` after converting the value to bits per second.
+    static func rateText(_ bytesPerSec: Double, in unit: RateUnit) -> String {
+        switch unit {
+        case .bytesPerSecond:
+            return rateText(bytesPerSec)
+        case .bitsPerSecond:
+            return DataRate.text(bytesPerSecond: bytesPerSec, in: .bitsPerSecond)
         }
     }
 

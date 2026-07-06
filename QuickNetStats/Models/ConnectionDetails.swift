@@ -107,7 +107,13 @@ struct ConnectionDetails: Equatable {
     // MARK: - Computed Rows
 
     /// Interface group rows in design order; nil fields are omitted.
-    var interfaceRows: [DetailRow] {
+    /// Convenience alias for `interfaceRows(rateUnit:)` in the native (bits) unit.
+    var interfaceRows: [DetailRow] { interfaceRows(rateUnit: .bitsPerSecond) }
+
+    /// Interface group rows in design order; nil fields are omitted. `rateUnit`
+    /// governs only the "Link speed" row's unit family; it defaults to the native
+    /// bits unit so existing call sites and previews stay unchanged.
+    func interfaceRows(rateUnit: RateUnit = .bitsPerSecond) -> [DetailRow] {
         var rows: [DetailRow] = []
         if let name = Self.interfaceName(interface) {
             rows.append(DetailRow(label: "Name", value: name))
@@ -119,7 +125,7 @@ struct ConnectionDetails: Equatable {
             rows.append(DetailRow(label: "MTU", value: "\(mtu)"))
         }
         if let speed = interface.linkSpeedMbps {
-            rows.append(DetailRow(label: "Link speed", value: Self.linkSpeedText(speed)))
+            rows.append(DetailRow(label: "Link speed", value: Self.linkSpeedText(speed, in: rateUnit)))
         }
         if let media = interface.mediaDescription {
             rows.append(DetailRow(label: "Media", value: media))
@@ -250,9 +256,9 @@ struct ConnectionDetails: Equatable {
         }
     }
 
-    /// Formats a link speed in Mbps: whole Mbps below 1000, otherwise Gbps with
-    /// any trailing `.0` stripped ("866 Mbps", "1 Gbps", "2.5 Gbps").
-    /// Internal so `LiveConnectionStats` can reuse it for the Tx-rate row.
+    /// Formats a link speed in Mbps in its native bits unit: whole Mbps below 1000,
+    /// otherwise Gbps with any trailing `.0` stripped ("866 Mbps", "1 Gbps",
+    /// "2.5 Gbps"). Internal so `LiveConnectionStats` can reuse it for the Tx-rate row.
     static func linkSpeedText(_ mbps: Double) -> String {
         if mbps < 1000 {
             return "\(Int(mbps.rounded())) Mbps"
@@ -262,6 +268,18 @@ struct ConnectionDetails: Equatable {
             return "\(Int(gbps)) Gbps"
         }
         return "\(gbps) Gbps"
+    }
+
+    /// Formats a link speed in Mbps, displayed in `unit`. The native bits unit keeps
+    /// the historical `linkSpeedText(_:)` output byte-for-byte; the bytes unit routes
+    /// through `DataRate` after converting the Mbps value to bits per second.
+    static func linkSpeedText(_ mbps: Double, in unit: RateUnit) -> String {
+        switch unit {
+        case .bitsPerSecond:
+            return linkSpeedText(mbps)
+        case .bytesPerSecond:
+            return DataRate.text(bitsPerSecond: mbps * 1_000_000, in: .bytesPerSecond)
+        }
     }
 
     /// Composes "44 · 5 GHz · 80 MHz", dropping nil pieces; `nil` when all are nil.

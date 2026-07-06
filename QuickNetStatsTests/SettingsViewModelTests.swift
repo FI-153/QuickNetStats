@@ -19,6 +19,7 @@ struct SettingsViewModelTests {
         arguments: [
             (SettingsViewModel.SettingsPage.menubar, "Menu Bar"),
             (SettingsViewModel.SettingsPage.visuals, "Visuals"),
+            (SettingsViewModel.SettingsPage.connectionDetails, "Connection Details"),
             (SettingsViewModel.SettingsPage.notifications, "Notifications"),
             (SettingsViewModel.SettingsPage.about, "About"),
         ]
@@ -34,6 +35,7 @@ struct SettingsViewModelTests {
         arguments: [
             (SettingsViewModel.SettingsPage.menubar, "menubar.rectangle"),
             (SettingsViewModel.SettingsPage.visuals, "accessibility"),
+            (SettingsViewModel.SettingsPage.connectionDetails, "speedometer"),
             (SettingsViewModel.SettingsPage.notifications, "bell.badge"),
             (SettingsViewModel.SettingsPage.about, "info.circle"),
         ]
@@ -49,6 +51,7 @@ struct SettingsViewModelTests {
         arguments: [
             (SettingsViewModel.SettingsPage.menubar, Color.red),
             (SettingsViewModel.SettingsPage.visuals, Color.blue),
+            (SettingsViewModel.SettingsPage.connectionDetails, Color.orange),
             (SettingsViewModel.SettingsPage.notifications, Color.green),
             (SettingsViewModel.SettingsPage.about, Color.gray),
         ]
@@ -59,9 +62,9 @@ struct SettingsViewModelTests {
 
     // MARK: - CaseIterable & Identifiable
 
-    @Test("allCases contains exactly 4 pages")
+    @Test("allCases contains exactly 5 pages")
     func allCasesCount() {
-        #expect(SettingsViewModel.SettingsPage.allCases.count == 4)
+        #expect(SettingsViewModel.SettingsPage.allCases.count == 5)
     }
 
     @Test("id matches rawValue for each page")
