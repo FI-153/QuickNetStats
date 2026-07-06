@@ -108,9 +108,35 @@ class UpdateManager: ObservableObject {
         tag.replacingOccurrences(of: "^[vV]\\.?", with: "", options: .regularExpression)
     }
 
-    /// Simple semantic version comparison
-    /// - Returns True if the current version is not the latest one
+    /// Pre-release-aware version comparison.
+    ///
+    /// Each version is split into a numeric base (up to the first "-") and an optional pre-release
+    /// suffix, e.g. "3.0.0-Beta-2" -> base "3.0.0", suffix "Beta-2".
+    /// - Different bases: a numeric comparison of the bases decides.
+    /// - Equal bases: the remote is newer only when the local build is a pre-release and the remote
+    ///   is the stable release (the stable release supersedes its own betas). Two pre-releases with
+    ///   the same base are treated as equal — GitHub's /releases/latest endpoint never returns a
+    ///   pre-release, so that case is unreachable in practice.
+    /// - Returns True if the remote version is newer than the local one
     func isVersion(_ remote: String, newerThan local: String) -> Bool {
-        return remote.compare(local, options: .numeric) == .orderedDescending
+        let remoteBase = String(remote.prefix(while: { $0 != "-" }))
+        let localBase = String(local.prefix(while: { $0 != "-" }))
+
+        guard remoteBase == localBase else {
+            return remoteBase.compare(localBase, options: .numeric) == .orderedDescending
+        }
+
+        // Equal bases: a stable remote (no suffix) supersedes a pre-release local.
+        return remote == remoteBase && local != localBase
+    }
+
+    /// Whether a version string denotes a beta build (contains "beta", case-insensitive).
+    static func isBetaVersion(_ version: String) -> Bool {
+        version.range(of: "beta", options: .caseInsensitive) != nil
+    }
+
+    /// Whether the currently running build is a beta.
+    var isBetaBuild: Bool {
+        Self.isBetaVersion(currentVersion)
     }
 }

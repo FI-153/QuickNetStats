@@ -45,9 +45,21 @@ struct AboutView: View {
                 .font(.largeTitle)
                 .fontWeight(.bold)
             
-            Text(updateManager.getCurrentVersion())
-                .font(.headline)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                Text(updateManager.getCurrentVersion())
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+
+                if updateManager.isBetaBuild {
+                    Text("BETA")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.tint)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.tint.opacity(0.15), in: Capsule())
+                }
+            }
             
             HStack(spacing: 4) {
                 Text("Developed by")
