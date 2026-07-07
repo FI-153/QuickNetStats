@@ -118,6 +118,30 @@ struct ConnectionDetailsTests {
         #expect(value("Also available", in: details.interfaceRows) == nil)
     }
 
+    // MARK: - Interface BSSID
+
+    @Test("interfaceRows includes BSSID after MAC address when opted in")
+    func interfaceRowsIncludeBSSIDWhenOptedIn() {
+        let rows = ConnectionDetails.mockWifi.interfaceRows(includeBSSID: true)
+        let labels = rows.map(\.label)
+        #expect(rows.contains(DetailRow(label: "BSSID", value: "aa:bb:cc:11:22:33")))
+        #expect(labels.firstIndex(of: "BSSID") == labels.firstIndex(of: "MAC address").map { $0 + 1 })
+    }
+
+    @Test("interfaceRows omits BSSID by default")
+    func interfaceRowsOmitBSSIDByDefault() {
+        let labels = ConnectionDetails.mockWifi.interfaceRows().map(\.label)
+        #expect(!labels.contains("BSSID"))
+    }
+
+    @Test("interfaceRows omits BSSID when the value is missing")
+    func interfaceRowsOmitNilBSSID() {
+        var details = ConnectionDetails.mockWifi
+        details.interface.bssid = nil
+        let labels = details.interfaceRows(includeBSSID: true).map(\.label)
+        #expect(!labels.contains("BSSID"))
+    }
+
     // MARK: - Addressing group
 
     @Test("An empty addressing block produces no rows")

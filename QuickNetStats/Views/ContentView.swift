@@ -24,6 +24,7 @@ struct ContentView: View {
                 netStats: netStatsManager.netStats,
                 privateIP: netDetailsManager.privateIP,
                 publicIP: netDetailsManager.publicIP,
+                ssid: netDetailsManager.ssid,
                 connectionDetailsManager: connectionDetailsManager
             )
             

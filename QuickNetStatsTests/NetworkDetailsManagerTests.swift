@@ -52,4 +52,20 @@ struct NetworkDetailsManagerTests {
 
         #expect(manager.publicIP == nil)
     }
+
+    @Test("getAddresses populates the SSID from the Wi-Fi reader")
+    func ssidFetched() async {
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(url: request.url!, statusCode: 500, httpVersion: nil, headerFields: nil)!
+            return (response, Data())
+        }
+
+        let manager = NetworkDetailsManager(
+            session: mockSession(),
+            wifiReader: MockWifiReader(result: nil, currentSSID: "HomeNet")
+        )
+        await manager.getAddresses()
+
+        #expect(manager.ssid == "HomeNet")
+    }
 }

@@ -27,6 +27,7 @@ struct ConnectionDetails: Equatable {
         var bsdName: String?
         var displayName: String?
         var macAddress: String?
+        var bssid: String?
         var mtu: Int?
         var linkSpeedMbps: Double?
         /// Active media type for wired links ("1000baseT full-duplex"); nil off Ethernet.
@@ -112,14 +113,16 @@ struct ConnectionDetails: Equatable {
 
     /// Interface group rows in design order; nil fields are omitted. `rateUnit`
     /// governs only the "Link speed" row's unit family; it defaults to the native
-    /// bits unit so existing call sites and previews stay unchanged.
-    func interfaceRows(rateUnit: RateUnit = .bitsPerSecond) -> [DetailRow] {
+    func interfaceRows(rateUnit: RateUnit = .bitsPerSecond, includeBSSID: Bool = false) -> [DetailRow] {
         var rows: [DetailRow] = []
         if let name = Self.interfaceName(interface) {
             rows.append(DetailRow(label: "Name", value: name))
         }
         if let mac = interface.macAddress {
             rows.append(DetailRow(label: "MAC address", value: mac))
+        }
+        if includeBSSID, let bssid = interface.bssid {
+            rows.append(DetailRow(label: "BSSID", value: bssid))
         }
         if let mtu = interface.mtu {
             rows.append(DetailRow(label: "MTU", value: "\(mtu)"))
@@ -299,6 +302,7 @@ struct ConnectionDetails: Equatable {
             bsdName: "en0",
             displayName: "Wi-Fi",
             macAddress: "a4:83:e7:1a:2b:3c",
+            bssid: "aa:bb:cc:11:22:33",
             mtu: 1500,
             linkSpeedMbps: 866,
             supports: "IPv4 · IPv6 · DNS",

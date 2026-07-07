@@ -42,12 +42,17 @@ final class MockInterfaceReader: InterfaceReading {
 
 final class MockWifiReader: WifiReading {
     var result: WifiSnapshot?
+    var currentSSIDResult: String?
     private(set) var callCount = 0
-    init(result: WifiSnapshot?) { self.result = result }
+    init(result: WifiSnapshot?, currentSSID: String? = nil) {
+        self.result = result
+        self.currentSSIDResult = currentSSID
+    }
     func snapshot(for bsdName: String) -> WifiSnapshot? {
         callCount += 1
         return result
     }
+    func currentSSID() -> String? { currentSSIDResult }
 }
 
 final class MockPathReader: PathReading {
@@ -109,7 +114,8 @@ struct ConnectionDetailsManagerTests {
             countryCode: "IT",
             rssiDBm: -52,
             noiseDBm: -95,
-            txRateMbps: 866
+            txRateMbps: 866,
+            bssid: "de:ad:be:ef:00:01"
         )
     }
 
@@ -174,6 +180,20 @@ struct ConnectionDetailsManagerTests {
         #expect(details?.dnsDhcp.dnsServers == ["1.1.1.1"])
         #expect(details?.wifi?.channelNumber == 44)
         #expect(details?.wifi?.security == "WPA3 Personal")
+    }
+
+    @Test("fetch passes the Wi-Fi snapshot's BSSID through to the interface group")
+    func fetchPassesBSSID() async {
+        let manager = ConnectionDetailsManager(
+            systemConfig: MockSystemConfigReader(result: fullSystemConfig),
+            interfaceReader: MockInterfaceReader(result: fullInterface),
+            wifiReader: MockWifiReader(result: fullWifi),
+            session: mockSession(ok("2a00::1"))
+        )
+
+        await manager.fetchDetails()
+
+        #expect(manager.details?.interface.bssid == "de:ad:be:ef:00:01")
     }
 
     @Test("supportsText lists true flags, None when all false, nil when all nil", arguments: [

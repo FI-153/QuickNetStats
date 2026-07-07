@@ -40,6 +40,7 @@ class Settings: ObservableObject {
         static let wifiRateUnit = "wifiRateUnit"
         static let liveRateUnit = "liveRateUnit"
         static let startLiveMonitoringOnOpen = "startLiveMonitoringOnOpen"
+        static let showNetworkNames = "showNetworkNames"
     }
     
     @AppStorage(UserDefaultsKeys.showSummaryInMenu)
@@ -91,5 +92,9 @@ class Settings: ObservableObject {
     
     @AppStorage(UserDefaultsKeys.startLiveMonitoringOnOpen)
     var startLiveMonitoringOnOpen: Bool = false
+
+    /// Opt-in display of the Wi-Fi SSID (main window) and BSSID (Connection Details).
+    @AppStorage(UserDefaultsKeys.showNetworkNames)
+    var showNetworkNames: Bool = false
 
 }

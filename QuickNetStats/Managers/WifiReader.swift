@@ -21,16 +21,22 @@ struct WifiSnapshot: Equatable {
     var rssiDBm: Int?
     var noiseDBm: Int?
     var txRateMbps: Double?
+    var bssid: String?
 }
 
 /// A seam over CoreWLAN so the manager stays testable.
 protocol WifiReading {
     func snapshot(for bsdName: String) -> WifiSnapshot?
+    /// The SSID of the default Wi-Fi interface; nil off Wi-Fi or when Location
+    /// Services authorization is missing.
+    func currentSSID() -> String?
 }
 
 /// Reads channel/band/width/PHY/security and RF metrics from CoreWLAN. Returns
 /// `nil` for non-Wi-Fi interfaces or when Wi-Fi is off. This is the ONLY file that
-/// imports CoreWLAN. **`ssid()`/`bssid()` are location-gated and never called.**
+/// imports CoreWLAN. **`ssid()`/`bssid()` are read here (the sole exception to the
+/// project-wide prohibition); they return nil without Location Services
+/// authorization — see `LocationPermissionManager`.**
 ///
 /// Enum fields are mapped by `rawValue` rather than by Swift-imported case names,
 /// which sidesteps the fragile acronym casing of `CWSecurity` (`.WEP`/`.OWE`) and
@@ -70,7 +76,16 @@ struct WifiReader: WifiReading {
         let txRate = interface.transmitRate()
         snapshot.txRateMbps = txRate > 0 ? txRate : nil
 
+        // Location-gated: nil without Location Services authorization (graceful).
+        snapshot.bssid = interface.bssid()
+
         return snapshot
+    }
+
+    /// The SSID of the default Wi-Fi interface, or nil off Wi-Fi / when Location
+    /// Services authorization is missing (CoreWLAN returns nil, never prompts).
+    func currentSSID() -> String? {
+        CWWiFiClient.shared().interface()?.ssid()
     }
 
     // MARK: - Enum mapping (by rawValue)

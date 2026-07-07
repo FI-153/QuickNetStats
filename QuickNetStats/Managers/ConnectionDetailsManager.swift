@@ -102,6 +102,7 @@ class ConnectionDetailsManager: ObservableObject {
                 bsdName: scSnapshot.primaryInterface,
                 displayName: scSnapshot.primaryInterfaceDisplayName,
                 macAddress: interfaceSnapshot.macAddress,
+                bssid: wifiSnapshot?.bssid,
                 mtu: interfaceSnapshot.mtu,
                 linkSpeedMbps: interfaceSnapshot.linkSpeedMbps,
                 mediaDescription: interfaceSnapshot.mediaDescription,

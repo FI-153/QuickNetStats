@@ -86,6 +86,21 @@ struct SettingsDefaultsTests {
 
         #expect(Settings().startLiveMonitoringOnOpen == false)
     }
+
+    @Test("showNetworkNames defaults to false")
+    @MainActor
+    func showNetworkNamesDefaultsToFalse() {
+        let key = Settings.UserDefaultsKeys.showNetworkNames
+        let savedValue = UserDefaults.standard.object(forKey: key)
+        UserDefaults.standard.removeObject(forKey: key)
+        defer {
+            if let savedValue {
+                UserDefaults.standard.set(savedValue, forKey: key)
+            }
+        }
+
+        #expect(Settings().showNetworkNames == false)
+    }
 }
 
 @Suite("Settings Enums")

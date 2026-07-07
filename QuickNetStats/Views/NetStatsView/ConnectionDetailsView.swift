@@ -22,7 +22,13 @@ struct ConnectionDetailsView: View {
             
             if isExpanded {
                 if let details = manager.details {
-                    DetailGroupView(title: "Interface", rows: details.interfaceRows(rateUnit: settings.interfaceRateUnit))
+                    DetailGroupView(
+                        title: "Interface",
+                        rows: details.interfaceRows(
+                            rateUnit: settings.interfaceRateUnit,
+                            includeBSSID: settings.showNetworkNames
+                        )
+                    )
                     Divider()
                     DetailGroupView(title: "Addressing", rows: details.addressingRows)
                     Divider()

@@ -28,6 +28,23 @@ struct NetStatsViewModelTests {
         #expect(vm.linkQualityColor == expected)
     }
 
+    // MARK: - Wi-Fi connection gate
+
+    @Test(
+        "isWifiConnection is true only when the connection rides Wi-Fi",
+        arguments: [
+            (NetworkStats.mockGoodWifiConnection, true),
+            (NetworkStats.mockGoodEthConnection, false),
+            (NetworkStats.mockConstrainedExpensiveCellConnection, true),   // hotspot over Wi-Fi
+            (NetworkStats.mockExpensiveCellConnection, false),             // hotspot over cable
+            (NetworkStats.mockDisconnected, false),
+        ]
+    )
+    func isWifiConnectionGate(netStats: NetworkStats, expected: Bool) {
+        let vm = NetStatsViewModel(netStats: netStats, privateIP: nil, publicIP: nil)
+        #expect(vm.isWifiConnection == expected)
+    }
+
     // MARK: - Initialization
 
     @Test("ViewModel stores IP addresses")

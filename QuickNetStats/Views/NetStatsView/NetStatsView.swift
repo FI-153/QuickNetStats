@@ -22,9 +22,10 @@ struct NetStatsView: View {
         netStats: NetworkStats,
         privateIP: String?,
         publicIP: String?,
+        ssid: String? = nil,
         connectionDetailsManager: ConnectionDetailsManager
     ) {
-        self.vm = NetStatsViewModel(netStats: netStats, privateIP: privateIP, publicIP: publicIP)
+        self.vm = NetStatsViewModel(netStats: netStats, privateIP: privateIP, publicIP: publicIP, ssid: ssid)
         self.connectionDetailsManager = connectionDetailsManager
     }
 
@@ -36,11 +37,21 @@ struct NetStatsView: View {
     var body: some View {
         VStack(spacing: 16) {
             HStack (alignment: .center, spacing: 40){
-                NetworkInterfaceView(
-                    netInterfaceType: vm.netStats.interfaceType,
-                    isAvailable: vm.netStats.isConnected,
-                    linkQualityColor: settings.isColorful ? vm.linkQualityColor : monochromeColor
-                )
+                VStack(spacing: 6) {
+                    NetworkInterfaceView(
+                        netInterfaceType: vm.netStats.interfaceType,
+                        isAvailable: vm.netStats.isConnected,
+                        linkQualityColor: settings.isColorful ? vm.linkQualityColor : monochromeColor
+                    )
+
+                    if settings.showNetworkNames, vm.isWifiConnection, let ssid = vm.ssid {
+                        Text(ssid)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.gray)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
                 .frame(height: 80)
 
                 if let linkQuality = vm.netStats.linkQuality {
@@ -118,6 +129,7 @@ struct NetStatsView: View {
         netStats: NetworkStats.mockGoodWifiConnection,
         privateIP: "10.0.0.32",
         publicIP: "100.10.30.2",
+        ssid: "HomeNet 5GHz",
         connectionDetailsManager: .preview(details: .mockWifi)
     )
         .padding()
