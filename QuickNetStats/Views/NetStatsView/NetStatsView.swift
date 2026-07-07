@@ -52,7 +52,7 @@ struct NetStatsView: View {
                             .truncationMode(.middle)
                     }
                 }
-                .frame(height: 80)
+                .frame(height: 90)
 
                 if let linkQuality = vm.netStats.linkQuality {
                     LinkQualityView(

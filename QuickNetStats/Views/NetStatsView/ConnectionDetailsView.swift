@@ -16,38 +16,53 @@ struct ConnectionDetailsView: View {
     @EnvironmentObject var settings: Settings
     @State private var isExpanded = false
 
+    private static let maxDetailsHeight: CGFloat = 600
+    @State private var detailsContentHeight: CGFloat = .infinity
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             connectionDetailsButton
             
             if isExpanded {
                 if let details = manager.details {
-                    DetailGroupView(
-                        title: "Interface",
-                        rows: details.interfaceRows(
-                            rateUnit: settings.interfaceRateUnit,
-                            includeBSSID: settings.showNetworkNames
-                        )
-                    )
-                    Divider()
-                    DetailGroupView(title: "Addressing", rows: details.addressingRows)
-                    Divider()
-                    DetailGroupView(title: "DNS & DHCP", rows: details.dnsDhcpRows)
-                    if !details.proxyRows.isEmpty {
-                        Divider()
-                        DetailGroupView(title: "Proxy", rows: details.proxyRows)
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 8) {
+                            DetailGroupView(
+                                title: "Interface",
+                                rows: details.interfaceRows(
+                                    rateUnit: settings.interfaceRateUnit,
+                                    includeBSSID: settings.showNetworkNames
+                                )
+                            )
+                            Divider()
+                            DetailGroupView(title: "Addressing", rows: details.addressingRows)
+                            Divider()
+                            DetailGroupView(title: "DNS & DHCP", rows: details.dnsDhcpRows)
+                            if !details.proxyRows.isEmpty {
+                                Divider()
+                                DetailGroupView(title: "Proxy", rows: details.proxyRows)
+                            }
+                            Divider()
+                            DetailGroupView(title: "Wi-Fi", rows: details.wifiRows)
+                            Divider()
+                            LiveStatsSectionView(
+                                isLive: manager.isLive,
+                                showsWifiRows: details.wifi != nil,
+                                stats: manager.liveStats,
+                                liveUnit: settings.liveRateUnit,
+                                wifiRateUnit: settings.wifiRateUnit,
+                                onToggle: { manager.isLive ? manager.stopLive() : manager.startLive() }
+                            )
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .onGeometryChange(for: CGFloat.self) { proxy in
+                            proxy.size.height
+                        } action: { height in
+                            detailsContentHeight = height
+                        }
                     }
-                    Divider()
-                    DetailGroupView(title: "Wi-Fi", rows: details.wifiRows)
-                    Divider()
-                    LiveStatsSectionView(
-                        isLive: manager.isLive,
-                        showsWifiRows: details.wifi != nil,
-                        stats: manager.liveStats,
-                        liveUnit: settings.liveRateUnit,
-                        wifiRateUnit: settings.wifiRateUnit,
-                        onToggle: { manager.isLive ? manager.stopLive() : manager.startLive() }
-                    )
+                    .scrollIndicators(.hidden)
+                    .frame(height: min(detailsContentHeight, Self.maxDetailsHeight))
                 } else {
                     ProgressView()
                         .controlSize(.small)
