@@ -63,12 +63,13 @@ struct NetStatsView: View {
             }
             
             ipButtonsSection
+            
+            exceptionDescriptionSection
 
             if vm.netStats.isConnected {
                 ConnectionDetailsView(manager: connectionDetailsManager)
             }
 
-            exceptionDescriptionSection
 
         }
         .padding()
@@ -92,6 +93,8 @@ struct NetStatsView: View {
                 if vm.netStats.isConstrained {
                     Text("**Low Data Mode** is enabled for this network.")
                 }
+                
+                Divider()
             }
         }
         .foregroundStyle(.secondary)
