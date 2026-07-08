@@ -36,6 +36,15 @@ class ConnectionDetailsManager: ObservableObject {
     /// The running poll loop, if any.
     private var liveTask: Task<Void, Never>?
 
+    /// The in-flight refetch scheduled by a connection change, cancelled and
+    /// replaced if another change arrives before it finishes so a superseded
+    /// (cancelled) fetch never publishes stale data.
+    private var changeTask: Task<Void, Never>?
+
+    /// Retains the connection-change subscription so `observeConnectionChanges`
+    /// only ever subscribes once.
+    private var connectionChangeCancellable: AnyCancellable?
+
     /// A full counter sample taken at a point in time, used to compute per-second
     /// deltas for throughput, packet, error, and drop rates.
     private struct CounterSample {
@@ -155,6 +164,28 @@ class ConnectionDetailsManager: ObservableObject {
     func refresh() async {
         guard details != nil else { return }
         await fetchDetails()
+    }
+
+    // MARK: - Connection change
+
+    /// Invalidates the cached details when the active connection changes so an
+    /// open dropdown stops showing the previous interface's fields. 
+    func connectionChanged() {
+        guard details != nil else { return }
+        details = nil
+        previousSample = nil
+        changeTask?.cancel()
+        changeTask = Task { await fetchDetails() }
+    }
+
+    /// Subscribes to network-stats changes so `connectionChanged()` fires on
+    /// every connection switch (Wi-Fi → Ethernet, Wi-Fi A → Wi-Fi B). Idempotent:
+    /// repeated calls (e.g. on every popover appearance) subscribe only once.
+    func observeConnectionChanges(_ publisher: AnyPublisher<NetworkStats, Never>) {
+        guard connectionChangeCancellable == nil else { return }
+        connectionChangeCancellable = publisher.sink { [weak self] _ in
+            self?.connectionChanged()
+        }
     }
 
     // MARK: - Live polling
@@ -282,6 +313,7 @@ class ConnectionDetailsManager: ObservableObject {
 
     deinit {
         liveTask?.cancel()
+        changeTask?.cancel()
     }
 }
 

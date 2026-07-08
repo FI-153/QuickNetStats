@@ -29,6 +29,10 @@ class NetworkDetailsManager: ObservableObject {
     /// Reads the Wi-Fi SSID (injectable for testing).
     private let wifiReader: WifiReading
 
+    /// Retains the connection-change subscription so `observeConnectionChanges`
+    /// only ever subscribes once.
+    private var connectionChangeCancellable: AnyCancellable?
+
     /// Creates a manager with the given session and Wi-Fi reader.
     /// - Parameters:
     ///   - session: The session used for the public IP lookup.
@@ -58,6 +62,16 @@ class NetworkDetailsManager: ObservableObject {
         self.publicIP = await fetchPublicIpAddress()
         self.privateIP = getPrivateIPAddress()
         self.ssid = wifiReader.currentSSID()
+    }
+
+    /// Subscribes to network-stats changes so the public/private IPs and SSID are
+    /// refreshed via `deleteAndGetAddresses()` when the active connection changes
+    /// while the popover is open. Idempotent: repeated calls subscribe only once.
+    func observeConnectionChanges(_ publisher: AnyPublisher<NetworkStats, Never>) {
+        guard connectionChangeCancellable == nil else { return }
+        connectionChangeCancellable = publisher.sink { [weak self] _ in
+            Task { await self?.deleteAndGetAddresses() }
+        }
     }
     
     /**

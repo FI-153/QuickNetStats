@@ -5,6 +5,7 @@
 
 import Testing
 import Foundation
+import Combine
 @testable import QuickNetStats
 
 // MARK: - Reader test doubles
@@ -393,6 +394,94 @@ struct ConnectionDetailsManagerTests {
         await manager.fetchDetails()
         await manager.refresh()
 
+        #expect(systemConfig.callCount == 2)
+    }
+
+    // MARK: - Connection change
+
+    @Test("connectionChanged is a no-op before the first fetch")
+    func connectionChangedNoOpBeforeFetch() async {
+        let systemConfig = MockSystemConfigReader(result: fullSystemConfig)
+        let manager = ConnectionDetailsManager(
+            systemConfig: systemConfig,
+            interfaceReader: MockInterfaceReader(result: fullInterface),
+            wifiReader: MockWifiReader(result: nil),
+            session: mockSession(ok("2a00::1"))
+        )
+
+        manager.connectionChanged()
+
+        // Nothing to invalidate: details stays nil and no refetch is scheduled.
+        #expect(manager.details == nil)
+        #expect(systemConfig.callCount == 0)
+        // Give any erroneously scheduled refetch a chance to run.
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(systemConfig.callCount == 0)
+    }
+
+    @Test("connectionChanged flushes then repopulates details after a fetch")
+    func connectionChangedRefetchesAfterFetch() async {
+        let systemConfig = MockSystemConfigReader(result: fullSystemConfig)
+        let manager = ConnectionDetailsManager(
+            systemConfig: systemConfig,
+            interfaceReader: MockInterfaceReader(result: fullInterface),
+            wifiReader: MockWifiReader(result: nil),
+            session: mockSession(ok("2a00::1"))
+        )
+
+        await manager.fetchDetails()
+        #expect(manager.details?.addressing.routerAddress == "192.168.1.1")
+
+        // The new interface reports a different router; the change must surface it.
+        var updated = fullSystemConfig
+        updated.routerAddress = "10.0.0.1"
+        systemConfig.result = updated
+        manager.connectionChanged()
+
+        let refetched = await eventually { manager.details?.addressing.routerAddress == "10.0.0.1" }
+        #expect(refetched)
+        #expect(systemConfig.callCount == 2)
+    }
+
+    @Test("observeConnectionChanges refetches on a published change")
+    func observeTriggersRefetch() async {
+        let systemConfig = MockSystemConfigReader(result: fullSystemConfig)
+        let manager = ConnectionDetailsManager(
+            systemConfig: systemConfig,
+            interfaceReader: MockInterfaceReader(result: fullInterface),
+            wifiReader: MockWifiReader(result: nil),
+            session: mockSession(ok("2a00::1"))
+        )
+        await manager.fetchDetails()
+
+        let subject = PassthroughSubject<NetworkStats, Never>()
+        manager.observeConnectionChanges(subject.eraseToAnyPublisher())
+        subject.send(.mockGoodEthConnection)
+
+        let refetched = await eventually { systemConfig.callCount == 2 }
+        #expect(refetched)
+    }
+
+    @Test("observeConnectionChanges subscribes once even if called twice")
+    func observeIsIdempotent() async {
+        let systemConfig = MockSystemConfigReader(result: fullSystemConfig)
+        let manager = ConnectionDetailsManager(
+            systemConfig: systemConfig,
+            interfaceReader: MockInterfaceReader(result: fullInterface),
+            wifiReader: MockWifiReader(result: nil),
+            session: mockSession(ok("2a00::1"))
+        )
+        await manager.fetchDetails()
+
+        let subject = PassthroughSubject<NetworkStats, Never>()
+        manager.observeConnectionChanges(subject.eraseToAnyPublisher())
+        manager.observeConnectionChanges(subject.eraseToAnyPublisher())
+        subject.send(.mockGoodEthConnection)
+
+        // Exactly one refetch: fetch (1) + one change (2), never (3).
+        let reached = await eventually { systemConfig.callCount == 2 }
+        #expect(reached)
+        try? await Task.sleep(for: .milliseconds(50))
         #expect(systemConfig.callCount == 2)
     }
 

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 import UserNotifications
 
 @main
@@ -33,6 +34,20 @@ struct QuickNetStatsApp: App {
                 .padding()
                 .frame(width: 550)
                 .task {
+                    // Invalidate cached details/IPs whenever the connection changes.
+                    // `.dropFirst()` skips the value $netStats replays to a new
+                    // subscriber so app launch doesn't trigger a pointless flush.
+                    // Both observe calls are idempotent, so re-running .task on each
+                    // popover appearance re-subscribes only once.
+                    // Note: the manual refresh button restarts NWPathMonitor and
+                    // re-publishes, so it additionally triggers one flush+refetch here
+                    // — harmless.
+                    connectionDetailsManager.observeConnectionChanges(
+                        netStatsManager.$netStats.dropFirst().eraseToAnyPublisher()
+                    )
+                    netDetailsManager.observeConnectionChanges(
+                        netStatsManager.$netStats.dropFirst().eraseToAnyPublisher()
+                    )
                     await netDetailsManager.getAddresses()
                 }
                 .environmentObject(settings)

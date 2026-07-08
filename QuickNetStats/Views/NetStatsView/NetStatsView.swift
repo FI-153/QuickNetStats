@@ -69,8 +69,6 @@ struct NetStatsView: View {
             if vm.netStats.isConnected {
                 ConnectionDetailsView(manager: connectionDetailsManager)
             }
-
-
         }
         .padding()
     }
