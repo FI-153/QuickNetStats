@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 /// The collapsible "Connection Details" dropdown shown below the IP buttons.
 /// Fetches on first expand, stops live polling on collapse and on popover close.
@@ -16,8 +17,24 @@ struct ConnectionDetailsView: View {
     @EnvironmentObject var settings: Settings
     @State private var isExpanded = false
 
-    private static let maxDetailsHeight: CGFloat = 600
+    /// Fallback cap used when no screen height is available (e.g. `NSScreen.main` is nil).
+    private static let fallbackMaxDetailsHeight: CGFloat = 600
     @State private var detailsContentHeight: CGFloat = .infinity
+
+    /// The scroll-view height cap for the expanded details, capped at 3/4 of the
+    /// screen the app is currently viewed on. Read per body evaluation via
+    /// `NSScreen.main` (the screen containing the key window — the MenuBarExtra
+    /// panel is key while the popover is open), so reopening the popover on a
+    /// different display picks up that screen's height.
+    private var maxDetailsHeight: CGFloat {
+        Self.maxDetailsHeight(forScreenHeight: NSScreen.main?.frame.height)
+    }
+
+    /// Returns 3/4 of `screenHeight`, or ``fallbackMaxDetailsHeight`` when it is nil.
+    static func maxDetailsHeight(forScreenHeight screenHeight: CGFloat?) -> CGFloat {
+        guard let screenHeight else { return fallbackMaxDetailsHeight }
+        return screenHeight * 0.75
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -62,7 +79,7 @@ struct ConnectionDetailsView: View {
                         }
                     }
                     .scrollIndicators(.hidden)
-                    .frame(height: min(detailsContentHeight, Self.maxDetailsHeight))
+                    .frame(height: min(detailsContentHeight, maxDetailsHeight))
                 } else {
                     ProgressView()
                         .controlSize(.small)
