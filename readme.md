@@ -1,8 +1,11 @@
 # <img src='Assets/icon.png' width='65' align='center' alt='icon'> QuickNetStats
-
 Essential network statistics and insights directly in the Menu Bar
 
-<p align="left">
+<p align="center">
+  <img src='Assets/main.webp' width='70%' alt='main'>
+</p>
+
+<p align="center">
   <a href="https://github.com/FI-153/QuickNetStats/stargazers">
     <img src="https://img.shields.io/github/stars/FI-153/QuickNetStats?style=social" alt="GitHub Stars"/>
   </a>
@@ -13,8 +16,6 @@ Essential network statistics and insights directly in the Menu Bar
     <img src="https://img.shields.io/github/downloads/FI-153/QuickNetStats/total?label=Downloads&color=blue&logo=homebrew" alt="Homebrew Downloads"/>
   </a>
 </p>
-
-<img src='Assets/main.webp' width='100%' alt='main'>
 
 > [!IMPORTANT]
 > The app is compatible down to macOS 13 (Ventura) but the network quality information uses an API available from macOS 26 (Tahoe) onwards.
