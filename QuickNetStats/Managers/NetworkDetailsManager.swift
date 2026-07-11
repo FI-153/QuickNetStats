@@ -17,33 +17,61 @@ class NetworkDetailsManager: ObservableObject {
     /// The public IP of this machine.
     @Published var publicIP: String?
 
+    /// The Wi-Fi network name (SSID) of the primary interface, or nil off Wi-Fi /
+    /// without Location Services authorization. Gated for display by
+    /// `Settings.showNetworkNames`; the read itself is harmless when unauthorized.
+    @Published var ssid: String?
+
     /// The URLSession used to fetch the public IP (injectable for testing).
     /// Defaults to the shared 5-second-timeout reachability session.
     private let session: URLSession
 
-    /// Creates a manager with the given session.
-    /// - Parameter session: The session used for the public IP lookup.
-    init(session: URLSession = .reachabilitySession) {
+    /// Reads the Wi-Fi SSID (injectable for testing).
+    private let wifiReader: WifiReading
+
+    /// Retains the connection-change subscription so `observeConnectionChanges`
+    /// only ever subscribes once.
+    private var connectionChangeCancellable: AnyCancellable?
+
+    /// Creates a manager with the given session and Wi-Fi reader.
+    /// - Parameters:
+    ///   - session: The session used for the public IP lookup.
+    ///   - wifiReader: The reader used for the Wi-Fi SSID.
+    init(session: URLSession = .reachabilitySession, wifiReader: WifiReading = WifiReader()) {
         self.session = session
+        self.wifiReader = wifiReader
     }
 
-    /// Populate the published attributes for public and private IP.
+    /// Populate the published attributes for public and private IP and the SSID.
     func getAddresses() async {
         self.publicIP = await fetchPublicIpAddress()
         self.privateIP = getPrivateIPAddress()
+        self.ssid = wifiReader.currentSSID()
     }
-    
+
     /// Delete the old IPs then populate the published attributes for public and private IP.
     /// Use this to trigger UI updates every time the method is called
     func deleteAndGetAddresses() async {
-        
+
         // Delete the old values
         self.publicIP = nil
         self.privateIP = nil
-        
+        self.ssid = nil
+
         // Compute new values
         self.publicIP = await fetchPublicIpAddress()
         self.privateIP = getPrivateIPAddress()
+        self.ssid = wifiReader.currentSSID()
+    }
+
+    /// Subscribes to network-stats changes so the public/private IPs and SSID are
+    /// refreshed via `deleteAndGetAddresses()` when the active connection changes
+    /// while the popover is open. Idempotent: repeated calls subscribe only once.
+    func observeConnectionChanges(_ publisher: AnyPublisher<NetworkStats, Never>) {
+        guard connectionChangeCancellable == nil else { return }
+        connectionChangeCancellable = publisher.sink { [weak self] _ in
+            Task { await self?.deleteAndGetAddresses() }
+        }
     }
     
     /**

@@ -6,17 +6,25 @@
 //
 
 import SwiftUI
+import Network
 
 class NetStatsViewModel {
     
     var netStats: NetworkStats
     var privateIP: String?
     var publicIP: String?
+    var ssid: String?
 
-    init(netStats: NetworkStats, privateIP: String?, publicIP: String?) {
+    init(netStats: NetworkStats, privateIP: String?, publicIP: String?, ssid: String? = nil) {
         self.netStats = netStats
         self.privateIP = privateIP
         self.publicIP = publicIP
+        self.ssid = ssid
+    }
+
+    /// True when the SSID label is meaningful: the active connection actually rides Wi-Fi.
+    var isWifiConnection: Bool {
+        netStats.interfaceType == .wifi || netStats.connectionTechnology == .wifi
     }
 
     var linkQualityColor: Color {

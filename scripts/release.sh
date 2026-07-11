@@ -48,7 +48,12 @@ if git rev-parse "$TAG" >/dev/null 2>&1; then
     die "Tag '$TAG' already exists"
 fi
 
-info "Releasing $APP_NAME as $TAG"
+# Derive the version from the tag (strip leading v/V and optional dot),
+# e.g. V.3.0.0-Beta-2 -> 3.0.0-Beta-2. Same rule as UpdateManager.cleanVersion(fromTag:).
+VERSION="${TAG#[vV]}"
+VERSION="${VERSION#.}"
+
+info "Releasing $APP_NAME as $TAG (version $VERSION)"
 
 # ─── Step 1: Archive ────────────────────────────────────────────────────────
 info "Building release archive..."
@@ -57,7 +62,8 @@ xcodebuild archive \
     -scheme "$SCHEME" \
     -configuration Release \
     -archivePath "$ARCHIVE_PATH" \
-    -quiet
+    -quiet \
+    MARKETING_VERSION="$VERSION"
 
 [ -d "$ARCHIVE_PATH" ] || die "Archive failed — $ARCHIVE_PATH not found"
 green "Archive created"
@@ -115,10 +121,6 @@ if [[ "$TAG" == *[Bb]eta* ]]; then
     PRERELEASE_FLAG="--prerelease"
     info "Detected beta release"
 fi
-
-# Extract version for the title (strip v/V prefix and leading dot)
-VERSION="${TAG#[vV]}"
-VERSION="${VERSION#.}"
 
 gh release create "$TAG" "$ZIP_NAME" \
     --title "$VERSION" \

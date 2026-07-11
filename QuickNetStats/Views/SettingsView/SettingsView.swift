@@ -33,6 +33,8 @@ struct SettingsView: View {
                 MenuBarView(settings: settings)
             case .visuals:
                 VisualsView(settings: settings)
+            case .connectionDetails:
+                ConnectionDetailsSettingsView(settings: settings)
             case .notifications:
                 NotificationView(settings: settings)
             case .about:
@@ -56,7 +58,14 @@ struct SettingsView: View {
         .onAppear {
             // Show the app icon in the dock and bring the settings to the foreground
             NSApp.setActivationPolicy(.regular)
-            NSApp.activate(ignoringOtherApps: true)
+            // Defer activation one runloop turn: closing the MenuBarExtra panel hands focus
+            // back to the previously frontmost app, which would bury this window otherwise
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+                NSApp.windows
+                    .first { $0.identifier?.rawValue.hasPrefix("settings-window") == true }?
+                    .orderFrontRegardless()
+            }
         }
         .onDisappear {
             // Hide the app icon from the dock

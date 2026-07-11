@@ -11,27 +11,42 @@ struct ContentView: View {
     
     @ObservedObject var netStatsManager: NetworkStatsManager
     @ObservedObject var netDetailsManager: NetworkDetailsManager
-    
+    @ObservedObject var connectionDetailsManager: ConnectionDetailsManager
+
     @EnvironmentObject var settings: Settings
     
     @Environment(\.openWindow) var openWindow
-    
+    @Environment(\.dismiss) var dismiss
+
+    /// Measured total popover height, passed down so the Connection Details cap
+    /// can budget from the real chrome instead of a constant.
+    @State private var popoverHeight: CGFloat = 0
+
     var body: some View {
         VStack(spacing: 0){
             NetStatsView(
                 netStats: netStatsManager.netStats,
                 privateIP: netDetailsManager.privateIP,
-                publicIP: netDetailsManager.publicIP
+                publicIP: netDetailsManager.publicIP,
+                ssid: netDetailsManager.ssid,
+                connectionDetailsManager: connectionDetailsManager,
+                popoverHeight: popoverHeight
             )
-            
+
             Divider()
-            
+
             footerButtonsSection
+        }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height
+        } action: { height in
+            let rounded = height.rounded()
+            if popoverHeight != rounded { popoverHeight = rounded }
         }
         .overlay(alignment: .topTrailing) {
             headerButtonsSection
         }
-        
+
     }
     
     var footerButtonsSection: some View {
@@ -44,6 +59,7 @@ struct ContentView: View {
             
             Button {
                 openWindow(id: "settings-window")
+                dismiss()
             } label: {
                 FooterButtonLabelView(labelText: "Settings", systemName: "gear")
             }
@@ -59,6 +75,7 @@ struct ContentView: View {
             Task {
                 netStatsManager.refresh()
                 await netDetailsManager.deleteAndGetAddresses()
+                await connectionDetailsManager.refresh()
             }
         } label: {
             Image(systemName: "arrow.trianglehead.counterclockwise")
@@ -82,7 +99,11 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView(netStatsManager: NetworkStatsManager(), netDetailsManager: NetworkDetailsManager())
-        .environmentObject(Settings())
-        .frame(height: 350)
+    ContentView(
+        netStatsManager: NetworkStatsManager(),
+        netDetailsManager: NetworkDetailsManager(),
+        connectionDetailsManager: ConnectionDetailsManager()
+    )
+    .environmentObject(Settings())
+    .frame(height: 350)
 }
