@@ -31,6 +31,7 @@ struct UpdateManagerTests {
             ("V2.3.0", "2.3.0"),
             ("2.3.0", "2.3.0"),
             ("V.2.2.0-Beta-1", "2.2.0-Beta-1"),
+            ("V.3.0.0-Beta-2", "3.0.0-Beta-2"),
         ]
     )
     func cleanVersionStripsPrefixes(tag: String, expected: String) {
@@ -45,6 +46,39 @@ struct UpdateManagerTests {
         #expect(manager.isVersion("2.3.0", newerThan: "2.2.0"))
         #expect(!manager.isVersion("2.2.0", newerThan: "2.2.0"))
         #expect(!manager.isVersion("2.1.9", newerThan: "2.2.0"))
+    }
+
+    @Test(
+        "isVersion handles pre-release suffixes",
+        arguments: [
+            // The stable release supersedes its own betas
+            ("3.0.0", "3.0.0-Beta-2", true),
+            // A beta is never newer than the stable release with the same base
+            ("3.0.0-Beta-2", "3.0.0", false),
+            // Different bases: the numeric base comparison decides, suffixes or not
+            ("3.1.0-Beta-1", "3.0.0", true),
+            ("3.0.0-Beta-1", "3.1.0", false),
+            // Two pre-releases with the same base are treated as equal
+            ("3.0.0-Beta-2", "3.0.0-Beta-1", false),
+        ]
+    )
+    func prereleaseComparison(remote: String, local: String, expected: Bool) {
+        let manager = UpdateManager(session: mockSession())
+        #expect(manager.isVersion(remote, newerThan: local) == expected)
+    }
+
+    // MARK: - Beta detection
+
+    @Test(
+        "isBetaVersion detects a beta suffix case-insensitively",
+        arguments: [
+            ("3.0.0-Beta-2", true),
+            ("3.0.0-beta-1", true),
+            ("3.0.0", false),
+        ]
+    )
+    func betaVersionDetection(version: String, expected: Bool) {
+        #expect(UpdateManager.isBetaVersion(version) == expected)
     }
 
     // MARK: - checkForUpdates
