@@ -18,6 +18,10 @@ struct ContentView: View {
     @Environment(\.openWindow) var openWindow
     @Environment(\.dismiss) var dismiss
 
+    /// Measured total popover height, passed down so the Connection Details cap
+    /// can budget from the real chrome instead of a constant.
+    @State private var popoverHeight: CGFloat = 0
+
     var body: some View {
         VStack(spacing: 0){
             NetStatsView(
@@ -25,17 +29,24 @@ struct ContentView: View {
                 privateIP: netDetailsManager.privateIP,
                 publicIP: netDetailsManager.publicIP,
                 ssid: netDetailsManager.ssid,
-                connectionDetailsManager: connectionDetailsManager
+                connectionDetailsManager: connectionDetailsManager,
+                popoverHeight: popoverHeight
             )
-            
+
             Divider()
-            
+
             footerButtonsSection
+        }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height
+        } action: { height in
+            let rounded = height.rounded()
+            if popoverHeight != rounded { popoverHeight = rounded }
         }
         .overlay(alignment: .topTrailing) {
             headerButtonsSection
         }
-        
+
     }
     
     var footerButtonsSection: some View {

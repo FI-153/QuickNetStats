@@ -17,16 +17,21 @@ struct NetStatsView: View {
     @ObservedObject var connectionDetailsManager: ConnectionDetailsManager
 
     var vm: NetStatsViewModel
+    /// Total popover height, forwarded to ``ConnectionDetailsView`` so its cap can
+    /// budget from the real chrome. Defaults to 0 so previews stay compiling.
+    var popoverHeight: CGFloat = 0
 
     init(
         netStats: NetworkStats,
         privateIP: String?,
         publicIP: String?,
         ssid: String? = nil,
-        connectionDetailsManager: ConnectionDetailsManager
+        connectionDetailsManager: ConnectionDetailsManager,
+        popoverHeight: CGFloat = 0
     ) {
         self.vm = NetStatsViewModel(netStats: netStats, privateIP: privateIP, publicIP: publicIP, ssid: ssid)
         self.connectionDetailsManager = connectionDetailsManager
+        self.popoverHeight = popoverHeight
     }
 
     /// Icon tint used when colorful mode is off: readable in both appearances.
@@ -67,7 +72,7 @@ struct NetStatsView: View {
             exceptionDescriptionSection
 
             if vm.netStats.isConnected {
-                ConnectionDetailsView(manager: connectionDetailsManager)
+                ConnectionDetailsView(manager: connectionDetailsManager, popoverHeight: popoverHeight)
             }
         }
         .padding()

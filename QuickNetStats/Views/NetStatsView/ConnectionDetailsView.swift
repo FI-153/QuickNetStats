@@ -17,23 +17,53 @@ struct ConnectionDetailsView: View {
     @EnvironmentObject var settings: Settings
     @State private var isExpanded = false
 
-    /// Fallback cap used when no screen height is available (e.g. `NSScreen.main` is nil).
-    private static let fallbackMaxDetailsHeight: CGFloat = 600
-    @State private var detailsContentHeight: CGFloat = .infinity
+    var popoverHeight: CGFloat = 0
 
-    /// The scroll-view height cap for the expanded details, capped at 3/4 of the
-    /// screen the app is currently viewed on. Read per body evaluation via
-    /// `NSScreen.main` (the screen containing the key window — the MenuBarExtra
-    /// panel is key while the popover is open), so reopening the popover on a
-    /// different display picks up that screen's height.
-    private var maxDetailsHeight: CGFloat {
-        Self.maxDetailsHeight(forScreenHeight: NSScreen.main?.frame.height)
+    private static let fallbackMaxDetailsHeight: CGFloat = 600
+    
+    /// Gap kept between the popover and the menu bar when budgeting by visible height.
+    private static let detailsMargin: CGFloat = 16
+    
+    private static let minimumDetailsHeight: CGFloat = 100
+
+    @State private var detailsContentHeight: CGFloat = .infinity
+    
+    /// Rendered height of the details scroll view itself. Subtracted from
+    /// ``popoverHeight`` to derive the popover chrome (icon block, IP buttons,
+    /// exception text, buttons, footer, paddings).
+    @State private var scrollRenderedHeight: CGFloat = 0
+
+    private var chromeHeight: CGFloat? {
+        guard popoverHeight > 0, scrollRenderedHeight > 0 else { return nil }
+        return (popoverHeight - scrollRenderedHeight).rounded()
     }
 
-    /// Returns 3/4 of `screenHeight`, or ``fallbackMaxDetailsHeight`` when it is nil.
-    static func maxDetailsHeight(forScreenHeight screenHeight: CGFloat?) -> CGFloat {
+    /// The scroll-view height cap for the expanded details. Read per body
+    /// evaluation via `NSScreen.main` (the screen containing the key window — the
+    /// MenuBarExtra panel is key while the popover is open), so reopening the
+    /// popover on a different display picks up that screen's metrics.
+    private var maxDetailsHeight: CGFloat {
+        Self.maxDetailsHeight(
+            screenHeight: NSScreen.main?.frame.height,
+            visibleHeight: NSScreen.main?.visibleFrame.height,
+            chromeHeight: chromeHeight
+        )
+    }
+
+    /// Bounds the details cap by, in order of precedence.
+    /// Returns the smaller of the applicable bounds.
+    static func maxDetailsHeight(
+        screenHeight: CGFloat?,
+        visibleHeight: CGFloat?,
+        chromeHeight: CGFloat?
+    ) -> CGFloat {
         guard let screenHeight else { return fallbackMaxDetailsHeight }
-        return screenHeight * 0.75
+        
+        let userBound = screenHeight * 0.75
+        guard let visibleHeight, let chromeHeight, chromeHeight > 0 else { return userBound }
+        
+        let fitBound = max(minimumDetailsHeight, visibleHeight - chromeHeight - detailsMargin)
+        return min(userBound, fitBound)
     }
 
     var body: some View {
@@ -80,6 +110,12 @@ struct ConnectionDetailsView: View {
                     }
                     .scrollIndicators(.hidden)
                     .frame(height: min(detailsContentHeight, maxDetailsHeight))
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.size.height
+                    } action: { height in
+                        let rounded = height.rounded()
+                        if scrollRenderedHeight != rounded { scrollRenderedHeight = rounded }
+                    }
                 } else {
                     ProgressView()
                         .controlSize(.small)
