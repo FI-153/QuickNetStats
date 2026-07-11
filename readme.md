@@ -1,9 +1,8 @@
 # <img src='Assets/icon.png' width='65' align='center' alt='icon'> QuickNetStats
 
-Essential network statistics directly in the Menu Bar
+Essential network statistics and insights directly in the Menu Bar
 
-<img src='Assets/main.webp' width='100%' alt='main'>
-<p align="center">
+<p align="left">
   <a href="https://github.com/FI-153/QuickNetStats/stargazers">
     <img src="https://img.shields.io/github/stars/FI-153/QuickNetStats?style=social" alt="GitHub Stars"/>
   </a>
@@ -15,6 +14,8 @@ Essential network statistics directly in the Menu Bar
   </a>
 </p>
 
+<img src='Assets/main.webp' width='100%' alt='main'>
+
 > [!IMPORTANT]
 > The app is compatible down to macOS 13 (Ventura) but the network quality information uses an API available from macOS 26 (Tahoe) onwards.
 
@@ -25,6 +26,7 @@ QuickNetStats instead:
 - Reacts **immediately** when the connections is established or lost;
 - Displays an estimate of the **link quality** without a speedtest;
 - Lets you see and copy your IPV4 addresses at a glance.
+- (new) Lets you get deeper informations about your connection straight from the menu bar
 
 ## 🍺 Homebrew Installation (Recommended)
 You can install this easily as a cask using  **Homebrew**.
@@ -74,6 +76,12 @@ Either Good, Moderate or Minimal. The last case in the image below shows the mon
 Where clicking either one will copy the address to the clipboard.
 
 ![Addresses](https://github.com/user-attachments/assets/94590d63-04eb-40ef-bc24-54be5f2eedb2)
+
+### Connection Details
+Expanding the "Connection Details" section displays a rich selection of informations concerning your current connection.
+
+<img width="596" height="1351" alt="Screen Shot 2026-07-11 at 9 09 50 AM" src="https://github.com/user-attachments/assets/08c90aa2-cbd3-4cfc-b6a5-a384be2e75ba" />
+
 
 ### Informations for constrained and network capped networks
 Further details are displayes in the main view if you are using Low Data Mode or when using a capped connection like a cellular hotspot.

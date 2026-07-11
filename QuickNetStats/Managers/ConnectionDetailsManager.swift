@@ -320,6 +320,19 @@ class ConnectionDetailsManager: ObservableObject {
 // Not #if DEBUG-guarded: #Preview bodies compile in Release too, and the
 // existing mock convention (NetworkStats.mock*) ships unguarded as well.
 extension ConnectionDetailsManager {
+    /// Applies fixed state without consulting the readers — used by SwiftUI
+    /// previews and the `--demo` screenshot mode. With `isLive` true the Live
+    /// section shows `liveStats` as-is; no polling loop runs.
+    func apply(
+        details: ConnectionDetails?,
+        isLive: Bool = false,
+        liveStats: LiveConnectionStats? = nil
+    ) {
+        self.details = details
+        self.isLive = isLive
+        self.liveStats = liveStats
+    }
+
     /// Builds a manager pre-populated with static state for SwiftUI previews.
     /// No fetch is performed and the real readers are never consulted.
     static func preview(
@@ -328,9 +341,7 @@ extension ConnectionDetailsManager {
         liveStats: LiveConnectionStats? = nil
     ) -> ConnectionDetailsManager {
         let manager = ConnectionDetailsManager()
-        manager.details = details
-        manager.isLive = isLive
-        manager.liveStats = liveStats
+        manager.apply(details: details, isLive: isLive, liveStats: liveStats)
         return manager
     }
 }
