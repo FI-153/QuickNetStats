@@ -14,7 +14,7 @@ Essential network statistics and insights directly in the Menu Bar
   </a>
 </p>
 
-<img src='Assets/main.webp' width='60%' alt='main'>
+<img src='Assets/main.webp' width='100%' alt='main'>
 
 > [!IMPORTANT]
 > The app is compatible down to macOS 13 (Ventura) but the network quality information uses an API available from macOS 26 (Tahoe) onwards.
