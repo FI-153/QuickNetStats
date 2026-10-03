@@ -27,6 +27,36 @@ struct SettingsDefaultsTests {
         #expect(Settings().keepDetailsExpanded == false)
     }
 
+    @Test("notifyInternetEnabled defaults to true")
+    @MainActor
+    func notifyInternetEnabledDefaultsToTrue() {
+        let key = Settings.UserDefaultsKeys.notifyInternetEnabled
+        let savedValue = UserDefaults.standard.object(forKey: key)
+        UserDefaults.standard.removeObject(forKey: key)
+        defer {
+            if let savedValue {
+                UserDefaults.standard.set(savedValue, forKey: key)
+            }
+        }
+
+        #expect(Settings().notifyInternetEnabled == true)
+    }
+
+    @Test("notifyQualityEnabled defaults to true")
+    @MainActor
+    func notifyQualityEnabledDefaultsToTrue() {
+        let key = Settings.UserDefaultsKeys.notifyQualityEnabled
+        let savedValue = UserDefaults.standard.object(forKey: key)
+        UserDefaults.standard.removeObject(forKey: key)
+        defer {
+            if let savedValue {
+                UserDefaults.standard.set(savedValue, forKey: key)
+            }
+        }
+
+        #expect(Settings().notifyQualityEnabled == true)
+    }
+
     @Test("interfaceRateUnit defaults to bits per second")
     @MainActor
     func interfaceRateUnitDefaultsToBits() {

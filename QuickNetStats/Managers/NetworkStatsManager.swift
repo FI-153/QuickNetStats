@@ -8,6 +8,7 @@
 import Foundation
 import Network
 import Combine
+import os
 
 class NetworkStatsManager: ObservableObject {
 
@@ -104,6 +105,14 @@ class NetworkStatsManager: ObservableObject {
     /// Processes a path update from NWPathMonitor, gating on reachability when connected.
     private func handlePathUpdate(_ path: NWPath) {
         let pathStats = NetworkStats(path: path)
+        Logger.network.info("""
+            Path update: status=\(String(describing: path.status), privacy: .public) \
+            interface=\(pathStats.interfaceType.rawValue, privacy: .public) \
+            technology=\(String(describing: pathStats.connectionTechnology), privacy: .public) \
+            quality=\(pathStats.linkQuality?.description ?? "n/a", privacy: .public) \
+            expensive=\(pathStats.isExpensive, privacy: .public) \
+            constrained=\(pathStats.isConstrained, privacy: .public)
+            """)
 
         // Cancel any in-flight reachability check
         reachabilityTask?.cancel()
@@ -131,11 +140,13 @@ class NetworkStatsManager: ObservableObject {
         }
     }
 
-    /// Publishes new stats, sending notifications unless this is the first update.
+    /// Publishes new stats, sending notifications unless this is the first update,
+    /// which instead primes the link-quality baseline.
     private func publishStats(_ newStats: NetworkStats) {
         if isFirstUpdate {
             isFirstUpdate = false
             netStats = newStats
+            NotificationsManager.shared.primeLinkQuality(newStats)
             return
         }
 

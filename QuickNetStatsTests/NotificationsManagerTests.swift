@@ -16,12 +16,20 @@ struct NotificationsManagerCheckTests {
     func testDefaults(
         internetBehavior: InternetNotificationBehavior = .connects,
         qualityBehavior: LinkQualityNotificationBehavior = .changes,
-        interfaceChanges: Bool = false
+        interfaceChanges: Bool = false,
+        internetEnabled: Bool? = nil,
+        qualityEnabled: Bool? = nil
     ) -> UserDefaults {
         let defaults = UserDefaults(suiteName: UUID().uuidString)!
         defaults.set(internetBehavior.rawValue, forKey: Settings.UserDefaultsKeys.notifyInternetBehavior)
         defaults.set(qualityBehavior.rawValue, forKey: Settings.UserDefaultsKeys.notifyQualityBehavior)
         defaults.set(interfaceChanges, forKey: Settings.UserDefaultsKeys.notifyInterfaceChanges)
+        if let internetEnabled {
+            defaults.set(internetEnabled, forKey: Settings.UserDefaultsKeys.notifyInternetEnabled)
+        }
+        if let qualityEnabled {
+            defaults.set(qualityEnabled, forKey: Settings.UserDefaultsKeys.notifyQualityEnabled)
+        }
         return defaults
     }
 
@@ -123,6 +131,17 @@ struct NotificationsManagerCheckTests {
         #expect(result?.title == "Network Quality Worsened")
     }
 
+    @Test("Missing quality behavior key defaults to .changes")
+    func missingQualityBehaviorDefaultsToChanges() {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        let result = manager.checkLinkQualityChanges(
+            oldQuality: LinkQuality.minimal.rawValue,
+            newQuality: LinkQuality.good.rawValue,
+            defaults: defaults
+        )
+        #expect(result?.title == "Network Quality Improved")
+    }
+
     @Test("Returns nil when quality unchanged")
     func noNotificationWhenQualityUnchanged() {
         let defaults = testDefaults(qualityBehavior: .changes)
@@ -180,6 +199,59 @@ struct NotificationsManagerCheckTests {
         )
         #expect(result == nil)
     }
+
+    // MARK: - Category toggles
+
+    @Test(
+        "Internet notifications are silent when the category is disabled",
+        arguments: InternetNotificationBehavior.allCases
+    )
+    func internetDisabledIsSilent(behavior: InternetNotificationBehavior) {
+        let defaults = testDefaults(internetBehavior: behavior, internetEnabled: false)
+        let connect = manager.checkInternetStatusChanges(
+            wasConnected: false, isConnected: true, newInterface: .wifi, defaults: defaults
+        )
+        let disconnect = manager.checkInternetStatusChanges(
+            wasConnected: true, isConnected: false, newInterface: .none, defaults: defaults
+        )
+        #expect(connect == nil)
+        #expect(disconnect == nil)
+    }
+
+    @Test("Quality notifications are silent when the category is disabled")
+    func qualityDisabledIsSilent() {
+        let defaults = testDefaults(qualityBehavior: .changes, qualityEnabled: false)
+        let result = manager.checkLinkQualityChanges(
+            oldQuality: LinkQuality.good.rawValue,
+            newQuality: LinkQuality.minimal.rawValue,
+            defaults: defaults
+        )
+        #expect(result == nil)
+    }
+
+    @Test("Missing category keys are treated as enabled")
+    func missingKeysTreatedAsEnabled() {
+        let defaults = testDefaults(internetBehavior: .connects, qualityBehavior: .changes)
+        #expect(defaults.object(forKey: Settings.UserDefaultsKeys.notifyInternetEnabled) == nil)
+        #expect(defaults.object(forKey: Settings.UserDefaultsKeys.notifyQualityEnabled) == nil)
+
+        let internet = manager.checkInternetStatusChanges(
+            wasConnected: false, isConnected: true, newInterface: .wifi, defaults: defaults
+        )
+        let quality = manager.checkLinkQualityChanges(
+            oldQuality: LinkQuality.good.rawValue,
+            newQuality: LinkQuality.moderate.rawValue,
+            defaults: defaults
+        )
+        #expect(internet?.title == "Internet Connected")
+        #expect(quality?.title == "Network Quality Worsened")
+    }
+}
+
+/// Mutable time source so tests can step through the stability window and cooldown.
+private final class FakeClock {
+    var current = Date(timeIntervalSinceReferenceDate: 0)
+    func advance(_ seconds: TimeInterval) { current = current.addingTimeInterval(seconds) }
 }
 
 // `NotificationsManagerSettleTests` is nested under `SingletonBoundSuites`
@@ -200,10 +272,14 @@ extension SingletonBoundSuites {
             manager.defaults = defaults
             manager.suppressSystemNotifications = true
             manager.lastDeliveredNotification = nil
+            manager.now = { Date() }
+            manager.resetLinkQualityTracking()
             return defaults
         }
 
         private func restore(_ manager: NotificationsManager) {
+            manager.resetLinkQualityTracking()
+            manager.now = Date.init
             manager.defaults = .standard
             manager.suppressSystemNotifications = false
             manager.lastDeliveredNotification = nil
@@ -241,6 +317,120 @@ extension SingletonBoundSuites {
             try? await Task.sleep(for: .seconds(2))
 
             #expect(manager.lastDeliveredNotification?.title == "Internet Disconnected")
+        }
+
+        @Test("A disconnect with .connects behavior delivers nothing")
+        func disconnectWithConnectsBehaviorDeliversNothing() async {
+            let manager = NotificationsManager.shared
+            let defaults = configureManager(manager)
+            defaults.set(InternetNotificationBehavior.connects.rawValue,
+                         forKey: Settings.UserDefaultsKeys.notifyInternetBehavior)
+            defer { restore(manager) }
+
+            manager.checkForNotifications(
+                oldStats: NetworkStats.mockGoodWifiConnection,
+                newStats: NetworkStats.mockDisconnected
+            )
+            try? await Task.sleep(for: .seconds(2))
+
+            #expect(manager.lastDeliveredNotification == nil)
+        }
+
+        @Test("A sustained quality drop delivers one notification after the stability window")
+        func sustainedQualityDropDelivers() {
+            let manager = NotificationsManager.shared
+            _ = configureManager(manager)
+            defer { restore(manager) }
+            let clock = FakeClock()
+            manager.now = { clock.current }
+
+            manager.primeLinkQuality(NetworkStats.mockGoodWifiConnection)
+            manager.checkForNotifications(
+                oldStats: NetworkStats.mockGoodWifiConnection,
+                newStats: NetworkStats.mockModerateWifiConnection
+            )
+            clock.advance(10)
+            manager.evaluateLinkQuality()
+            #expect(manager.lastDeliveredNotification == nil)
+
+            clock.advance(21)
+            manager.evaluateLinkQuality()
+            #expect(manager.lastDeliveredNotification?.title == "Network Quality Worsened")
+        }
+
+        @Test("A filtered change updates the baseline without consuming the cooldown")
+        func filteredChangeDoesNotConsumeCooldown() {
+            let manager = NotificationsManager.shared
+            let defaults = configureManager(manager)
+            defaults.set(LinkQualityNotificationBehavior.improves.rawValue,
+                         forKey: Settings.UserDefaultsKeys.notifyQualityBehavior)
+            defer { restore(manager) }
+            let clock = FakeClock()
+            manager.now = { clock.current }
+
+            manager.primeLinkQuality(NetworkStats.mockGoodWifiConnection)
+            manager.checkForNotifications(
+                oldStats: NetworkStats.mockGoodWifiConnection,
+                newStats: NetworkStats.mockModerateWifiConnection
+            )
+            clock.advance(31)
+            manager.evaluateLinkQuality()
+            #expect(manager.lastDeliveredNotification == nil)
+            #expect(manager.linkQualityBaseline?.quality == .moderate)
+
+            manager.checkForNotifications(
+                oldStats: NetworkStats.mockModerateWifiConnection,
+                newStats: NetworkStats.mockGoodWifiConnection
+            )
+            clock.advance(31)
+            manager.evaluateLinkQuality()
+            #expect(manager.lastDeliveredNotification?.title == "Network Quality Improved")
+        }
+
+        @Test("Disabled quality advances the baseline without consuming the cooldown")
+        func disabledQualityDoesNotConsumeCooldown() {
+            let manager = NotificationsManager.shared
+            let defaults = configureManager(manager)
+            defaults.set(false, forKey: Settings.UserDefaultsKeys.notifyQualityEnabled)
+            defaults.set(LinkQualityNotificationBehavior.changes.rawValue,
+                         forKey: Settings.UserDefaultsKeys.notifyQualityBehavior)
+            defer { restore(manager) }
+            let clock = FakeClock()
+            manager.now = { clock.current }
+
+            manager.primeLinkQuality(NetworkStats.mockGoodWifiConnection)
+            manager.checkForNotifications(
+                oldStats: NetworkStats.mockGoodWifiConnection,
+                newStats: NetworkStats.mockModerateWifiConnection
+            )
+            clock.advance(31)
+            manager.evaluateLinkQuality()
+            #expect(manager.lastDeliveredNotification == nil)
+            #expect(manager.linkQualityBaseline?.quality == .moderate)
+
+            defaults.set(true, forKey: Settings.UserDefaultsKeys.notifyQualityEnabled)
+            manager.checkForNotifications(
+                oldStats: NetworkStats.mockModerateWifiConnection,
+                newStats: NetworkStats.mockGoodWifiConnection
+            )
+            clock.advance(31)
+            manager.evaluateLinkQuality()
+            #expect(manager.lastDeliveredNotification?.title == "Network Quality Improved")
+        }
+
+        @Test("Disabling notifications resets quality tracking")
+        func disabledNotificationsResetTracking() {
+            let manager = NotificationsManager.shared
+            let defaults = configureManager(manager)
+            defer { restore(manager) }
+
+            manager.primeLinkQuality(NetworkStats.mockGoodWifiConnection)
+            defaults.set(false, forKey: Settings.UserDefaultsKeys.isNotificationActive)
+            manager.checkForNotifications(
+                oldStats: NetworkStats.mockGoodWifiConnection,
+                newStats: NetworkStats.mockModerateWifiConnection
+            )
+            #expect(manager.linkQualityBaseline == nil)
         }
     }
 }

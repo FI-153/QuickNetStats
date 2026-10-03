@@ -38,6 +38,19 @@ extension SingletonBoundSuites {
             )
         }
 
+        @Test("The first published update primes the link-quality baseline")
+        func firstUpdatePrimesLinkQuality() {
+            let notifications = NotificationsManager.shared
+            notifications.resetLinkQualityTracking()
+            defer { notifications.resetLinkQualityTracking() }
+
+            let manager = makeManager()
+            manager.lastPathStats = NetworkStats.mockGoodWifiConnection
+            manager.applyPollResult(reachable: true)
+
+            #expect(notifications.linkQualityBaseline == .init(quality: .good, interface: .wifi))
+        }
+
         @Test("A successful poll after a failed one restores the connection stats")
         func pollRecoveryAfterFailure() {
             let manager = makeManager()
