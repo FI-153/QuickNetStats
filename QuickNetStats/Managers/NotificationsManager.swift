@@ -312,12 +312,10 @@ class NotificationsManager: ObservableObject {
         defaults: UserDefaults = UserDefaults.standard
     ) -> LinkQualityStatusNotification? {
         guard isCategoryEnabled(Settings.UserDefaultsKeys.notifyQualityEnabled, in: defaults) else { return nil }
-        let linkQualityNotificationsBehavior = LinkQualityNotificationBehavior(
-            rawValue: defaults
-                .integer(
-                    forKey: Settings.UserDefaultsKeys.notifyQualityBehavior
-                )
-        ) ?? .changes
+        // `integer(forKey:)` returns 0 (`.worsens`) for a missing key, which would bypass the `.changes` default.
+        let storedBehavior = defaults.object(forKey: Settings.UserDefaultsKeys.notifyQualityBehavior) as? Int
+        let linkQualityNotificationsBehavior = storedBehavior
+            .flatMap(LinkQualityNotificationBehavior.init(rawValue:)) ?? .changes
                 
         if oldQuality != newQuality {
             var shouldNotify = false

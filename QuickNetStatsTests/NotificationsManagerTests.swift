@@ -131,6 +131,17 @@ struct NotificationsManagerCheckTests {
         #expect(result?.title == "Network Quality Worsened")
     }
 
+    @Test("Missing quality behavior key defaults to .changes")
+    func missingQualityBehaviorDefaultsToChanges() {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        let result = manager.checkLinkQualityChanges(
+            oldQuality: LinkQuality.minimal.rawValue,
+            newQuality: LinkQuality.good.rawValue,
+            defaults: defaults
+        )
+        #expect(result?.title == "Network Quality Improved")
+    }
+
     @Test("Returns nil when quality unchanged")
     func noNotificationWhenQualityUnchanged() {
         let defaults = testDefaults(qualityBehavior: .changes)
