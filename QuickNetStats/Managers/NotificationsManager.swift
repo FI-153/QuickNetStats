@@ -7,6 +7,7 @@
 
 import UserNotifications
 import Combine
+import os
 
 class NotificationsManager: ObservableObject {
     
@@ -35,6 +36,18 @@ class NotificationsManager: ObservableObject {
 
     /// The pending settle task; cancelled and restarted on each new event
     private var settleTask: Task<Void, Never>?
+
+    /// Decides when link-quality changes are stable enough to notify, independently of the settle window.
+    private var linkQualityNotifier = LinkQualityNotifier()
+
+    /// Pending wake-up for the next link-quality deadline (stability window or cooldown end).
+    private var qualityTask: Task<Void, Never>?
+
+    /// Time source; overridable in tests to drive the stability window and cooldown.
+    var now: () -> Date = Date.init
+
+    /// The link quality currently treated as confirmed. Exposed for testing.
+    var linkQualityBaseline: LinkQualityNotifier.Baseline? { linkQualityNotifier.baseline }
 
     /// User defaults used to read notification preferences; overridable in tests to
     /// avoid polluting the real preferences.
@@ -104,7 +117,13 @@ class NotificationsManager: ObservableObject {
     /// Each subsequent change restarts the timer. When the timer fires after
     /// `settleDelay` seconds of quiet, compares original vs settled state.
     func checkForNotifications(oldStats: NetworkStats, newStats: NetworkStats) {
-        guard self.notificationsGloballyEnabled() else { return }
+        guard self.notificationsGloballyEnabled() else {
+            resetLinkQualityTracking()
+            return
+        }
+
+        linkQualityNotifier.observe(newStats, now: now())
+        scheduleQualityEvaluation()
 
         // Snapshot original state on the first change in this settle window
         if originalStats == nil {
@@ -121,8 +140,9 @@ class NotificationsManager: ObservableObject {
         }
     }
 
-    /// Called when the settle timer fires. Compares original vs settled state
-    /// and sends at most one notification (the highest priority).
+    /// Called when the settle timer fires. Compares original vs settled state for the
+    /// internet and interface categories and sends at most one notification (the highest priority).
+    /// Link quality is handled separately by `linkQualityNotifier`.
     private func evaluateSettledState() {
         guard let original = originalStats, let settled = latestStats else {
             originalStats = nil
@@ -138,7 +158,7 @@ class NotificationsManager: ObservableObject {
 
         let defaults = self.defaults
 
-        // Evaluate all three categories
+        // Evaluate internet and interface categories
         var candidates: [AppNotification] = []
 
         if let internetNotification = checkInternetStatusChanges(
@@ -160,20 +180,72 @@ class NotificationsManager: ObservableObject {
             candidates.append(interfaceNotification)
         }
 
-        if let qualityNotification = checkLinkQualityChanges(
-            oldQuality: original.linkQuality?.rawValue ?? 0,
-            newQuality: settled.linkQuality?.rawValue ?? 0,
-            defaults: defaults
-        ) {
-            candidates.append(qualityNotification)
-        }
-
         // Send only the highest-priority notification (Notification conforms to Comparable)
         if let best = candidates.min() {
             notify(best)
         }
     }
     
+    // MARK: - Link Quality
+
+    /// Establishes the link-quality baseline from the launch snapshot without notifying.
+    func primeLinkQuality(_ stats: NetworkStats) {
+        resetLinkQualityTracking()
+        linkQualityNotifier.observe(stats, now: now())
+    }
+
+    /// Cancels any pending quality evaluation and clears all link-quality state, including the cooldown.
+    func resetLinkQualityTracking() {
+        qualityTask?.cancel()
+        qualityTask = nil
+        linkQualityNotifier.reset()
+    }
+
+    /// Delivers a quality notification if a stable change is due and allowed by the user's
+    /// behavior setting, then schedules the next deadline. Internal for testing.
+    func evaluateLinkQuality() {
+        let evaluatedAt = now()
+        
+        if let change = linkQualityNotifier.evaluate(now: evaluatedAt) {
+            if let notification = checkLinkQualityChanges(
+                oldQuality: change.old.rawValue,
+                newQuality: change.new.rawValue,
+                defaults: defaults
+            ) {
+                notify(notification)
+                
+                linkQualityNotifier.recordDelivery(at: evaluatedAt)
+                Logger.notifications.debug(
+                    "Quality notification sent: \(change.old.description, privacy: .public) → \(change.new.description, privacy: .public)"
+                )
+                
+            } else {
+                Logger.notifications.debug("Quality change filtered by behavior setting")
+            }
+        }
+        scheduleQualityEvaluation()
+    }
+
+    /// Replaces any pending quality evaluation with one firing at the notifier's next deadline.
+    private func scheduleQualityEvaluation() {
+        qualityTask?.cancel()
+        
+        guard let deadline = linkQualityNotifier.nextDeadline else {
+            qualityTask = nil
+            return
+        }
+        
+        let delay = max(0, deadline.timeIntervalSince(now()))
+        
+        qualityTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled else { return }
+            self?.evaluateLinkQuality()
+        }
+    }
+
+    // MARK: - Checks
+
     /// Check internet status changes based on what the user configured in settings
     func checkInternetStatusChanges(
         wasConnected: Bool,
