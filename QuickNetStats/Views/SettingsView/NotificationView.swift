@@ -26,30 +26,43 @@ struct NotificationView: View {
             }
             
             Section {
-                
-                ToggleView(title: "Notify When the Interface Changes", variable: settings.$notifyInterfaceChanges)
-                
-                PickerView(
-                    title: "Notify When the Internet",
-                    selection: $settings.notifyInternetBehavior
-                ) {
-                    Text("Connects").tag(InternetNotificationBehavior.connects)
-                    Text("Disconnects")
-                        .tag(InternetNotificationBehavior.disconnects)
-                    Text("Changes").tag(InternetNotificationBehavior.changes)
+
+                ToggleView(title: "Network Interface Changes", variable: settings.$notifyInterfaceChanges)
+
+
+                Section {
+                    ToggleView(title: "Internet Status", variable: settings.$notifyInternetEnabled)
+
+                    if settings.notifyInternetEnabled {
+                        PickerView(
+                            title: "Notify When",
+                            selection: $settings.notifyInternetBehavior
+                        ) {
+                            Text("Connects").tag(InternetNotificationBehavior.connects)
+                            Text("Disconnects")
+                                .tag(InternetNotificationBehavior.disconnects)
+                            Text("Changes").tag(InternetNotificationBehavior.changes)
+                        }
+                    }
                 }
                 
-                PickerView(
-                    title: "Notify When Link Quality",
-                    selection: $settings.notifyQualityBehavior
-                ) {
-                    Text("Improves")
-                        .tag(LinkQualityNotificationBehavior.improves)
-                    Text("Worsens")
-                        .tag(LinkQualityNotificationBehavior.worsens)
-                    Text("Changes").tag(LinkQualityNotificationBehavior.changes)
+                Section {
+                    ToggleView(title: "Link Quality", variable: settings.$notifyQualityEnabled)
+                    
+                    if settings.notifyQualityEnabled {
+                        PickerView(
+                            title: "Notify When",
+                            selection: $settings.notifyQualityBehavior
+                        ) {
+                            Text("Improves")
+                                .tag(LinkQualityNotificationBehavior.improves)
+                            Text("Worsens")
+                                .tag(LinkQualityNotificationBehavior.worsens)
+                            Text("Changes").tag(LinkQualityNotificationBehavior.changes)
+                        }
+                    }
                 }
-                
+
             } header: {
                 Text("Notifications Settings")
             }

@@ -36,6 +36,8 @@ class Settings: ObservableObject {
         static let notifyInternetBehavior = "notifyInternetBehavior"
         static let notifyQualityBehavior = "notifyQualityBehavior"
         static let notifyInterfaceChanges = "notifyInterfaceChanges"
+        static let notifyInternetEnabled = "notifyInternetEnabled"
+        static let notifyQualityEnabled = "notifyQualityEnabled"
         static let interfaceRateUnit = "interfaceRateUnit"
         static let wifiRateUnit = "wifiRateUnit"
         static let liveRateUnit = "liveRateUnit"
@@ -77,6 +79,14 @@ class Settings: ObservableObject {
     
     @AppStorage(UserDefaultsKeys.notifyInterfaceChanges)
     var notifyInterfaceChanges: Bool = false
+
+    /// Whether internet connect/disconnect notifications are sent. Defaults to on.
+    @AppStorage(UserDefaultsKeys.notifyInternetEnabled)
+    var notifyInternetEnabled: Bool = true
+
+    /// Whether link-quality notifications are sent. Defaults to on.
+    @AppStorage(UserDefaultsKeys.notifyQualityEnabled)
+    var notifyQualityEnabled: Bool = true
 
     /// Display unit for the Interface "Link speed" row. Defaults to the native bits family.
     @AppStorage(UserDefaultsKeys.interfaceRateUnit)

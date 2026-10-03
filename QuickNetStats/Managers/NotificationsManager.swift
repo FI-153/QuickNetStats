@@ -112,6 +112,12 @@ class NotificationsManager: ObservableObject {
     private func notificationsGloballyEnabled() -> Bool {
         defaults.bool(forKey: Settings.UserDefaultsKeys.isNotificationActive)
     }
+
+    /// Reads a per-category toggle, treating a missing key as enabled: `@AppStorage`
+    /// defaults are never written to `UserDefaults`, so upgraded installs have no value yet.
+    private func isCategoryEnabled(_ key: String, in defaults: UserDefaults) -> Bool {
+        defaults.object(forKey: key) as? Bool ?? true
+    }
         
     /// Queue a settle evaluation. On first change, snapshots the original state.
     /// Each subsequent change restarts the timer. When the timer fires after
@@ -253,6 +259,7 @@ class NotificationsManager: ObservableObject {
         newInterface: NetworkInterfaceType,
         defaults: UserDefaults = UserDefaults.standard
     ) -> InternetStatusNotification? {
+        guard isCategoryEnabled(Settings.UserDefaultsKeys.notifyInternetEnabled, in: defaults) else { return nil }
         let internetNotificationsBehavior = InternetNotificationBehavior(
             rawValue: defaults.integer(forKey: Settings.UserDefaultsKeys.notifyInternetBehavior)
         ) ?? .connects
@@ -304,6 +311,7 @@ class NotificationsManager: ObservableObject {
         newQuality: Int,
         defaults: UserDefaults = UserDefaults.standard
     ) -> LinkQualityStatusNotification? {
+        guard isCategoryEnabled(Settings.UserDefaultsKeys.notifyQualityEnabled, in: defaults) else { return nil }
         let linkQualityNotificationsBehavior = LinkQualityNotificationBehavior(
             rawValue: defaults
                 .integer(
