@@ -34,9 +34,8 @@ struct NetStatsView: View {
         self.popoverHeight = popoverHeight
     }
 
-    /// Icon tint used when colorful mode is off: readable in both appearances.
     private var monochromeColor: Color {
-        colorScheme == .dark ? .secondary : .black
+        NetStatsViewModel.monochromeColor(for: colorScheme)
     }
 
     var body: some View {
@@ -52,7 +51,7 @@ struct NetStatsView: View {
                     if settings.showNetworkNames, vm.isWifiConnection, let ssid = vm.ssid {
                         Text(ssid)
                             .fontWeight(.semibold)
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
@@ -66,6 +65,8 @@ struct NetStatsView: View {
                     )
                 }
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(vm.accessibilitySummary(includeSSID: settings.showNetworkNames))
             
             ipButtonsSection
             
@@ -105,26 +106,14 @@ struct NetStatsView: View {
         
     var ipButtonsSection: some View {
         HStack(spacing: 16) {
-            Button {
-                if let publicIP = vm.publicIP {
-                    vm.copyToClipboard(publicIP)
-                }
-            } label: {
-                AddressView(title: "Public IP", value: vm.publicIP ?? "Unavailable")
+            CopyButton(value: vm.publicIP, animated: settings.useAnimations) { isConfirming in
+                AddressView(title: "Public IP", value: vm.publicIP ?? "Unavailable", isConfirming: isConfirming)
             }
-            .help("Click to copy to Clipboard")
-            
-            Button {
-                if let privateIP = vm.privateIP {
-                    vm.copyToClipboard(privateIP)
-                }
-            } label: {
-                AddressView(title: "Private IP", value: vm.privateIP ?? "Unavailable")
+
+            CopyButton(value: vm.privateIP, animated: settings.useAnimations) { isConfirming in
+                AddressView(title: "Private IP", value: vm.privateIP ?? "Unavailable", isConfirming: isConfirming)
             }
-            .help("Click to copy to Clipboard")
         }
-        .buttonStyle(.plain)
-        .focusable(false)
     }
 }
 

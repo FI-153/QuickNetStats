@@ -40,10 +40,29 @@ class NetStatsViewModel {
         }
     }
 
-    func copyToClipboard(_ str: String) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(str, forType: .string)
+    /// Icon tint used when colorful mode is off: readable in both appearances.
+    static func monochromeColor(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? .secondary : .primary
     }
-    
+
+    /// Single spoken description of the hero icon and link-quality indicator for VoiceOver.
+    func accessibilitySummary(includeSSID: Bool) -> String {
+        guard netStats.isConnected else { return "Disconnected" }
+        var parts = [spokenInterfaceName]
+        if includeSSID, isWifiConnection, let ssid { parts.append(ssid) }
+        if let quality = netStats.linkQuality, quality != .unknown {
+            parts.append("link quality \(quality.description)")
+        }
+        return parts.joined(separator: ", ")
+    }
+
+    private var spokenInterfaceName: String {
+        switch netStats.interfaceType {
+        case .wifi: return "Wi-Fi"
+        case .ethernet: return "Ethernet"
+        case .cellular: return "Personal Hotspot"
+        default: return "Network"
+        }
+    }
+
 }

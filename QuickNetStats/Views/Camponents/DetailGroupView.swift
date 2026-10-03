@@ -8,12 +8,13 @@
 import SwiftUI
 
 /// A titled two-column grid of label–value rows for one connection-details group.
-/// Each value is a plain button that copies its raw string to the clipboard.
+/// Each value is a ``CopyButton`` that copies its raw string to the clipboard.
 /// Renders nothing when `rows` is empty.
 struct DetailGroupView: View {
 
     let title: String
     let rows: [DetailRow]
+    var animated = true
 
     var body: some View {
         if !rows.isEmpty {
@@ -27,16 +28,19 @@ struct DetailGroupView: View {
                                 .foregroundStyle(.secondary)
                                 .gridColumnAlignment(.leading)
 
-                            Button {
-                                copy(row.value)
-                            } label: {
-                                Text(row.value)
-                                    .monospacedDigit()
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
+                            CopyButton(value: row.value, animated: animated) { isConfirming in
+                                Group {
+                                    if isConfirming {
+                                        Label("Copied", systemImage: "checkmark")
+                                    } else {
+                                        Text(row.value)
+                                            .monospacedDigit()
+                                            .truncationMode(.middle)
+                                    }
+                                }
+                                .lineLimit(1)
+                                .accessibilityLabel(row.value)
                             }
-                            .buttonStyle(.plain)
-                            .help("Click to copy")
                         }
                     }
                 }
@@ -47,16 +51,8 @@ struct DetailGroupView: View {
     
     private var detailsTitle: some View {
         Text(title)
-            .font(.title2)
-            .fontWeight(.semibold)
+            .font(.headline)
             .foregroundStyle(.secondary)
-    }
-
-    /// Copies the given string to the general pasteboard.
-    private func copy(_ value: String) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(value, forType: .string)
     }
 }
 

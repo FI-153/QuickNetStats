@@ -45,4 +45,19 @@ struct ConnectionDetailsViewTests {
             ) == expected
         )
     }
+
+    // MARK: - Details scroll height
+
+    @Test(
+        "detailsScrollHeight stays collapsed until measured, then fits content up to the cap",
+        arguments: [
+            (nil, CGFloat(500), CGFloat(0)),
+            (CGFloat(300), CGFloat(500), CGFloat(300)),
+            (CGFloat(800), CGFloat(500), CGFloat(500)),
+            (CGFloat(0), CGFloat(500), CGFloat(0)),
+        ] as [(CGFloat?, CGFloat, CGFloat)]
+    )
+    func detailsScrollHeight(contentHeight: CGFloat?, cap: CGFloat, expected: CGFloat) {
+        #expect(ConnectionDetailsView.detailsScrollHeight(contentHeight: contentHeight, cap: cap) == expected)
+    }
 }

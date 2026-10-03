@@ -49,7 +49,7 @@ struct NetworkInterfaceView: View {
             } else {
                 Image(systemName: symbolName)
                     .resizable()
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.secondary)
                     .modifier(ShimmerEffect(direction: .vertical, offset: 200))
             }
         }

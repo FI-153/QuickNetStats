@@ -38,7 +38,7 @@ struct LiveStatsSectionView: View {
                 .focusable(false)
                 .help(isLive ? "Stop monitoring live metrics" : "Start monitoring live metrics")
             }
-            .font(.title2)
+            .font(.headline)
 
             Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 4) {
                 liveRow("Download", stats?.downloadText(in: liveUnit))

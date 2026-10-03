@@ -26,7 +26,7 @@ struct ConnectionDetailsView: View {
     
     private static let minimumDetailsHeight: CGFloat = 100
 
-    @State private var detailsContentHeight: CGFloat = .infinity
+    @State private var detailsContentHeight: CGFloat?
     
     /// Rendered height of the details scroll view itself. Subtracted from
     /// ``popoverHeight`` to derive the popover chrome (icon block, IP buttons,
@@ -38,14 +38,17 @@ struct ConnectionDetailsView: View {
         return (popoverHeight - scrollRenderedHeight).rounded()
     }
 
-    /// The scroll-view height cap for the expanded details. Read per body
-    /// evaluation via `NSScreen.main` (the screen containing the key window — the
-    /// MenuBarExtra panel is key while the popover is open), so reopening the
-    /// popover on a different display picks up that screen's metrics.
+    /// Screen of the popover window; `nil` until the view is attached to a window.
+    @State private var screen: NSScreen?
+
+    /// The scroll-view height cap for the expanded details, computed from the
+    /// popover window's own screen so reopening on a different display picks up
+    /// that screen's metrics. Falls back to `NSScreen.main` before the window is known.
     private var maxDetailsHeight: CGFloat {
-        Self.maxDetailsHeight(
-            screenHeight: NSScreen.main?.frame.height,
-            visibleHeight: NSScreen.main?.visibleFrame.height,
+        let current = screen ?? NSScreen.main
+        return Self.maxDetailsHeight(
+            screenHeight: current?.frame.height,
+            visibleHeight: current?.visibleFrame.height,
             chromeHeight: chromeHeight
         )
     }
@@ -66,6 +69,12 @@ struct ConnectionDetailsView: View {
         return min(userBound, fitBound)
     }
 
+    /// Zero until the content has been measured, so the first expanded frame never renders at the full cap.
+    static func detailsScrollHeight(contentHeight: CGFloat?, cap: CGFloat) -> CGFloat {
+        guard let contentHeight else { return 0 }
+        return min(contentHeight, cap)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             connectionDetailsButton
@@ -79,18 +88,19 @@ struct ConnectionDetailsView: View {
                                 rows: details.interfaceRows(
                                     rateUnit: settings.interfaceRateUnit,
                                     includeBSSID: settings.showNetworkNames
-                                )
+                                ),
+                                animated: settings.useAnimations
                             )
                             Divider()
-                            DetailGroupView(title: "Addressing", rows: details.addressingRows)
+                            DetailGroupView(title: "Addressing", rows: details.addressingRows, animated: settings.useAnimations)
                             Divider()
-                            DetailGroupView(title: "DNS & DHCP", rows: details.dnsDhcpRows)
+                            DetailGroupView(title: "DNS & DHCP", rows: details.dnsDhcpRows, animated: settings.useAnimations)
                             if !details.proxyRows.isEmpty {
                                 Divider()
-                                DetailGroupView(title: "Proxy", rows: details.proxyRows)
+                                DetailGroupView(title: "Proxy", rows: details.proxyRows, animated: settings.useAnimations)
                             }
                             Divider()
-                            DetailGroupView(title: "Wi-Fi", rows: details.wifiRows)
+                            DetailGroupView(title: "Wi-Fi", rows: details.wifiRows, animated: settings.useAnimations)
                             Divider()
                             LiveStatsSectionView(
                                 isLive: manager.isLive,
@@ -105,11 +115,16 @@ struct ConnectionDetailsView: View {
                         .onGeometryChange(for: CGFloat.self) { proxy in
                             proxy.size.height
                         } action: { height in
-                            detailsContentHeight = height
+                            // The first measurement arrives after the expand transaction, so it needs its own animation.
+                            if detailsContentHeight == nil {
+                                withAnimation(settings.useAnimations ? .default : nil) { detailsContentHeight = height }
+                            } else {
+                                detailsContentHeight = height
+                            }
                         }
                     }
                     .scrollIndicators(.hidden)
-                    .frame(height: min(detailsContentHeight, maxDetailsHeight))
+                    .frame(height: Self.detailsScrollHeight(contentHeight: detailsContentHeight, cap: maxDetailsHeight))
                     .onGeometryChange(for: CGFloat.self) { proxy in
                         proxy.size.height
                     } action: { height in
@@ -123,6 +138,9 @@ struct ConnectionDetailsView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onWindowScreenChange { newScreen in
+            if screen !== newScreen { screen = newScreen }
+        }
         .animation(settings.useAnimations ? .default : nil, value: isExpanded)
         .task(id: isExpanded) {
             if isExpanded && manager.details == nil {
@@ -151,17 +169,18 @@ struct ConnectionDetailsView: View {
         }
         .buttonStyle(.plain)
         .focusable(false)
+        .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
     }
     
     var connectionDetailsLabel: some View {
         HStack(spacing: 8) {
             Text("Connection Details")
+                .foregroundStyle(.primary)
             Image(systemName: "chevron.right")
+                .foregroundStyle(.secondary)
                 .rotationEffect(.degrees(isExpanded ? 90 : 0))
         }
-        .font(.callout)
-        .foregroundStyle(.secondary)
-
+        .font(.headline)
     }
 }
 

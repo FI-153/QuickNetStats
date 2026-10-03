@@ -22,6 +22,8 @@ struct ContentView: View {
     /// can budget from the real chrome instead of a constant.
     @State private var popoverHeight: CGFloat = 0
 
+    @State private var isRefreshing = false
+
     var body: some View {
         VStack(spacing: 0){
             NetStatsView(
@@ -73,9 +75,15 @@ struct ContentView: View {
     var headerButtonsSection: some View {
         Button {
             Task {
+                guard !isRefreshing else { return }
+                isRefreshing = true
+                defer { isRefreshing = false }
+                let minimumEnd = ContinuousClock.now.advanced(by: .seconds(1))
                 netStatsManager.refresh()
                 await netDetailsManager.deleteAndGetAddresses()
                 await connectionDetailsManager.refresh()
+                // A fast refresh would otherwise flash the disabled state.
+                try? await Task.sleep(until: minimumEnd, clock: .continuous)
             }
         } label: {
             Image(systemName: "arrow.trianglehead.counterclockwise")
@@ -85,9 +93,12 @@ struct ContentView: View {
                 .frame(width: 20)
         }
         .buttonStyle(.plain)
+        .disabled(isRefreshing)
+        .help("Refresh")
+        .accessibilityLabel("Refresh")
         .padding(.trailing)
     }
-    
+
     private func openNetworkSettings() {
         let urlString = "x-apple.systempreferences:com.apple.Network"
         
